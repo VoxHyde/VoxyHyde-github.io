@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Jump Ultra: Stable Edition</title>
+    <style>
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            overflow: hidden; background: #020617;
+            touch-action: none; font-family: 'system-ui', sans-serif;
+        }
+        canvas { display: block; width: 100vw; height: 100vh; }
+        #ui {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; display: flex; flex-direction: column;
+            align-items: center; padding-top: 5vh; color: white;
+        }
+        #score { font-size: 8vh; font-weight: 900; margin: 0; color: #38bdf8; }
+        .overlay {
+            position: absolute; inset: 0; background: rgba(2, 6, 23, 0.9);
+            display: flex; flex-direction: column; align-items: center; 
+            justify-content: center; color: white; z-index: 10;
+        }
+        .hidden { display: none; }
+        .btn {
+            background: #38bdf8; color: #020617; padding: 15px 40px;
+            border-radius: 50px; font-weight: bold; font-size: 1.2rem;
+            margin-top: 20px; cursor: pointer; pointer-events: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui"><div id="score">0</div></div>
+
+    <div id="start-screen" class="overlay">
+        <h1 id="title" style="font-size: 3rem; margin: 0;">JUMP ULTRA</h1>
+        <p style="opacity: 0.7;">Drag or use Arrows to move</p>
+        <div class="btn" onclick="start()">START GAME</div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+        const startScreen = document.getElementById('start-screen');
+
+        let width, height, score = 0, gameActive = false;
+        let platforms = [], particles = [], _popups = [];
+
+        // Tuned physics: higher jump, slightly lower gravity
+        const GRAVITY = 0.36;
+        const JUMP_STRENGTH = -20;
+        const MAX_X_SPEED = 11;
+        // pending multiplier when landing on yellow star platform
+        let pendingScoreMult = 1.0;
+
+        const player = { x: 0, y: 0, w: 40, h: 40, vx: 0, vy: 0, color: '#38bdf8' };
+        const keys = {};
+
+        function resize() {
+            const dpr = window.devicePixelRatio || 1;
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width * dpr;
+            canvas.height = height * dpr;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            player.w = Math.min(width * 0.1, 40);
+            player.h = player.w;
+        }
+
+        function spawnPlatform(y, isFirst = false) {
+            const pW = Math.min(width * 0.22, 100);
+            // try to avoid direct overlap with other platforms at same Y
+            let x = isFirst ? (width/2 - pW/2) : 0;
+            if (!isFirst) {
+                for (let attempt = 0; attempt < 8; attempt++) {
+                    const candidate = Math.random() * (width - pW);
+                    // check overlap with existing platforms near this Y
+                    let ok = true;
+                    for (let q of platforms) {
+                        if (Math.abs(q.y - y) < 18) {
+                            if (!(candidate + pW < q.x || candidate > q.x + q.w)) { ok = false; break; }
+                        }
+                    }
+                    if (ok) { x = candidate; break; }
+                    if (attempt === 7) x = candidate; // accept last candidate
+                }
+            }
+            // decide kind
+            let kind = 'normal';
+            const r = Math.random();
+            if (!isFirst) {
+                if (r > 0.94) kind = 'yellow';
+                else if (r > 0.88) kind = 'green';
+            }
+            const moving = Math.random() > 0.9;
+            const vx = moving ? ((Math.random() - 0.5) * 4) : 0;
+            return { x, y, w: pW, h: 14, kind, vx, moving };
+        }
+
+        function start() {
+            gameActive = true; score = 0;
+            platforms = []; _popups = [];
+            pendingScoreMult = 1.0;
+            startScreen.classList.add('hidden');
+            player.x = width / 2 - player.w / 2;
+            player.y = height * 0.7;
+            player.vy = JUMP_STRENGTH;
+            
+            for(let i=0; i<10; i++) {
+                platforms.push(spawnPlatform(height - (i * (height / 8)), i === 0));
+            }
+        }
+
+        // Input Handling
+        const handleInput = (e) => {
+            if (!gameActive) return;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const rect = canvas.getBoundingClientRect();
+            player.x += ((clientX - rect.left) - player.w/2 - player.x) * 0.2;
+        };
+        window.addEventListener('mousemove', handleInput);
+        window.addEventListener('touchmove', e => { e.preventDefault(); handleInput(e); }, {passive: false});
+        // allow direct jump via Space to test/assist jump feeling
+        window.addEventListener('keydown', e => {
+            keys[e.code] = true;
+            if (e.code === 'Space') player.vy = JUMP_STRENGTH;
+        });
+        window.addEventListener('keyup', e => keys[e.code] = false);
+
+        function update() {
+            if (!gameActive) return;
+
+            // Horizontal Physics
+            if (keys['ArrowLeft'] || keys['KeyA']) player.vx = -MAX_X_SPEED;
+            else if (keys['ArrowRight'] || keys['KeyD']) player.vx = MAX_X_SPEED;
+            else player.vx *= 0.8;
+            player.x += player.vx;
+
+            // Vertical Physics
+            const oldY = player.y;
+            const prevBottom = player.y + player.h;
+            player.vy += GRAVITY;
+            player.y += player.vy;
+            const curBottom = player.y + player.h;
+
+            // Screen Wrap
+            if (player.x > width) player.x = -player.w;
+            if (player.x < -player.w) player.x = width;
+
+            // Collisions (Only when falling)
+            if (player.vy > 0) {
+                for (let i = 0; i < platforms.length; i++) {
+                    const p = platforms[i];
+                    const hor = (player.x + player.w > p.x) && (player.x < p.x + p.w);
+                    const crossed = (prevBottom <= p.y) && (curBottom >= p.y);
+                    if (hor && crossed) {
+                        // landed on p
+                        if (p.kind === 'green') {
+                            player.vy = JUMP_STRENGTH * 1.6;
+                            _popups.push({x: player.x + player.w/2, y: player.y, t: "↑", life: 50});
+                        } else {
+                            player.vy = JUMP_STRENGTH;
+                        }
+
+                        if (p.kind === 'yellow') {
+                                // Calculate 50% of CURRENT score and add it instantly
+                                const bonus = Math.floor(score * 0.5);
+                                score += bonus;
+    
+                                // Show the bonus amount in the popup
+                                _popups.push({x: player.x + player.w/2, y: player.y, t: "+" + Math.floor(bonus/10), life: 60});
+    
+                                platforms.splice(i, 1);
+                            platforms.push(spawnPlatform(0));
+                            }
+
+
+                        player.y = p.y - player.h;
+                        break;
+                    }
+                }
+            }
+
+            // Scrolling
+            if (player.y < height / 2) {
+                let diff = height / 2 - player.y;
+                player.y = height / 2;
+                // apply pending multiplier if any (visible on score)
+                const added = Math.floor(diff * pendingScoreMult);
+                score += added;
+                pendingScoreMult = 1.0;
+                scoreEl.innerText = Math.floor(score / 10);
+                
+                // only shift vertical positions during scroll here
+                platforms.forEach(p => { p.y += diff; });
+            }
+            
+            // Always update moving platforms (every frame)
+            platforms.forEach(p => {
+                if (!p.moving) return;
+                p.x += p.vx;
+                // world bounds bounce
+                if (p.x < 0) { p.x = 0; p.vx *= -1; }
+                if (p.x + p.w > width) { p.x = width - p.w; p.vx *= -1; }
+                // avoid merging with other platforms near same Y: undo and reverse if overlap
+                for (let q of platforms) {
+                    if (q === p) continue;
+                    if (Math.abs(q.y - p.y) < 6) {
+                        const overlap = !(p.x + p.w < q.x || p.x > q.x + q.w);
+                        if (overlap) {
+                            p.x -= p.vx; // undo last step
+                            p.vx *= -1;
+                            break;
+                        }
+                    }
+                }
+            });
+
+            // Recycling platforms
+            for (let i = 0; i < platforms.length; i++) {
+                if (platforms[i].y > height) {
+                    platforms[i] = spawnPlatform(0);
+                }
+            }
+
+            // Death Check
+            if (player.y > height) {
+                gameActive = false;
+                startScreen.querySelector('h1').innerText = "SCORE: " + Math.floor(score/10);
+                startScreen.classList.remove('hidden');
+            }
+        }
+
+        function draw() {
+            ctx.fillStyle = '#020617';
+            ctx.fillRect(0, 0, width, height);
+
+            // Platforms
+            platforms.forEach(p => {
+                // color / icon by kind
+                ctx.fillStyle = p.kind === 'yellow' ? '#facc15' : (p.kind === 'green' ? '#4ade80' : (p.moving ? '#f472b6' : '#ffffff'));
+                
+                ctx.beginPath();
+                ctx.roundRect(p.x, p.y, p.w, p.h, 5);
+                ctx.fill();
+
+                if (p.kind === 'yellow' || p.kind === 'green') {
+                    ctx.fillStyle = '#02111a';
+                    ctx.font = `${Math.max(10, Math.round(p.h))}px sans-serif`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(p.kind === 'yellow' ? '★' : '↑', p.x + p.w/2, p.y + p.h/2 + 1);
+                }
+            });
+
+            // Popups
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 16px sans-serif';
+            _popups.forEach((pop, i) => {
+                ctx.fillText(pop.t, pop.x, pop.y);
+                pop.y -= 1; pop.life--;
+                if(pop.life <= 0) _popups.splice(i, 1);
+            });
+
+            // Player
+            ctx.fillStyle = player.color;
+            ctx.shadowBlur = 15; ctx.shadowColor = player.color;
+            ctx.beginPath(); ctx.roundRect(player.x, player.y, player.w, player.h, 10); ctx.fill();
+            ctx.shadowBlur = 0;
+
+            requestAnimationFrame(() => { update(); draw(); });
+        }
+
+        window.addEventListener('resize', resize);
+        resize(); draw();
+    </script>
+</body>
+</html>
