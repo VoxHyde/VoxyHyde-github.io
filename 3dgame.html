@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VOID SURVIVOR 3D</title>
+    <style>
+        body { margin: 0; background: #000; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        #ui {
+            position: absolute; top: 20px; left: 20px; color: #00f2ff;
+            text-shadow: 0 0 5px #00f2ff; pointer-events: none;
+        }
+        .bar-container { width: 200px; height: 10px; border: 1px solid #00f2ff; margin-bottom: 10px; background: rgba(0,0,0,0.5); }
+        #hp-bar { width: 100%; height: 100%; background: #ff3366; transition: width 0.3s; }
+        #xp-bar { width: 0%; height: 100%; background: #00f2ff; transition: width 0.3s; }
+        #crosshair {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 20px; height: 20px; border: 2px solid rgba(0, 242, 255, 0.5); border-radius: 50%;
+        }
+        #overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            background: rgba(0,0,0,0.8); color: white; display: none; z-index: 10;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui">
+        <div>HULL INTEGRITY</div>
+        <div class="bar-container"><div id="hp-bar"></div></div>
+        <div>EXP RATIO</div>
+        <div class="bar-container"><div id="xp-bar"></div></div>
+        <div style="font-size: 24px;">LEVEL: <span id="lvl">1</span></div>
+        <div>KILLS: <span id="score">0</span></div>
+    </div>
+
+    <div id="crosshair"></div>
+
+    <div id="overlay">
+        <h1 id="status-text">SYSTEM OFFLINE</h1>
+        <p>Your ship was reclaimed by the void.</p>
+        <button style="padding: 10px 20px; cursor: pointer;" onclick="location.reload()">RE-INITIALIZE</button>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+            }
+        }
+    </script>
+
+<script type="module">
+import * as THREE from 'three';
+
+/**
+ * GAME CONSTANTS & STATE
+ */
+const CONFIG = {
+    ASTEROID_COUNT: 100,
+    WORLD_SIZE: 1000,
+    PLAYER_SPEED: 0.5,
+    ROTATION_SPEED: 0.02,
+    FIRE_RATE: 150
+};
+
+let scene, camera, renderer, player, clock;
+let asteroids = [];
+let bullets = [];
+let particles = [];
+let gameState = {
+    hp: 100,
+    xp: 0,
+    lvl: 1,
+    score: 0,
+    lastFire: 0,
+    active: true
+};
+
+const keys = {};
+
+/**
+ * INITIALIZATION
+ */
+function init() {
+    scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x000005, 0.002);
+
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+    
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    document.body.appendChild(renderer.domElement);
+
+    // Lights
+    const ambientLight = new THREE.AmbientLight(0x404040, 2);
+    scene.add(ambientLight);
+    const sunLight = new THREE.DirectionalLight(0xffffff, 3);
+    sunLight.position.set(10, 10, 10);
+    scene.add(sunLight);
+
+    createStarfield();
+    createPlayer();
+    
+    for(let i=0; i < CONFIG.ASTEROID_COUNT; i++) spawnAsteroid();
+
+    clock = new THREE.Clock();
+    window.addEventListener('keydown', e => keys[e.code] = true);
+    window.addEventListener('keyup', e => keys[e.code] = false);
+    
+    animate();
+}
+
+/**
+ * PLAYER SYSTEM
+ */
+function createPlayer() {
+    const group = new THREE.Group();
+    
+    // Body - Sleek Poly Style
+    const bodyGeom = new THREE.ConeGeometry(0.5, 2, 8);
+    bodyGeom.rotateX(Math.PI / 2);
+    const mat = new THREE.MeshPhongMaterial({ color: 0x00f2ff, flatShading: true });
+    const body = new THREE.Mesh(bodyGeom, mat);
+    group.add(body);
+
+    // Wings
+    const wingGeom = new THREE.BoxGeometry(2, 0.1, 0.8);
+    const wings = new THREE.Mesh(wingGeom, mat);
+    group.add(wings);
+
+    // Engine Glow
+    const engineGeom = new THREE.SphereGeometry(0.3, 8, 8);
+    const engineMat = new THREE.MeshBasicMaterial({ color: 0x00ffff });
+    const engine = new THREE.Mesh(engineGeom, engineMat);
+    engine.position.z = 1;
+    group.add(engine);
+
+    player = group;
+    scene.add(player);
+}
+
+/**
+ * ENVIRONMENT SYSTEMS
+ */
+function createStarfield() {
+    const vertices = [];
+    for (let i = 0; i < 10000; i++) {
+        vertices.push(THREE.MathUtils.randFloatSpread(2000), THREE.MathUtils.randFloatSpread(2000), THREE.MathUtils.randFloatSpread(2000));
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    const material = new THREE.PointsMaterial({ color: 0xffffff, size: 0.7 });
+    const stars = new THREE.Points(geometry, material);
+    scene.add(stars);
+}
+
+function spawnAsteroid() {
+    const size = Math.random() * 5 + 2;
+    const geometry = new THREE.IcosahedronGeometry(size, 1);
+    
+    // Distort geometry for organic look
+    const position = geometry.attributes.position;
+    for (let i = 0; i < position.count; i++) {
+        position.setXYZ(i, 
+            position.getX(i) + (Math.random()-0.5),
+            position.getY(i) + (Math.random()-0.5),
+            position.getZ(i) + (Math.random()-0.5)
+        );
+    }
+
+    const material = new THREE.MeshPhongMaterial({ color: 0x555555, flatShading: true });
+    const mesh = new THREE.Mesh(geometry, material);
+    
+    // Spawn away from player
+    mesh.position.set(
+        THREE.MathUtils.randFloatSpread(CONFIG.WORLD_SIZE),
+        THREE.MathUtils.randFloatSpread(CONFIG.WORLD_SIZE),
+        THREE.MathUtils.randFloatSpread(CONFIG.WORLD_SIZE)
+    );
+    
+    mesh.userData = { 
+        radius: size,
+        rotationSpeed: Math.random() * 0.02 
+    };
+    
+    asteroids.push(mesh);
+    scene.add(mesh);
+}
+
+/**
+ * COMBAT & PHYSICS
+ */
+function shoot() {
+    const now = Date.now();
+    if (now - gameState.lastFire < CONFIG.FIRE_RATE) return;
+    
+    const bulletGeom = new THREE.SphereGeometry(0.1, 4, 4);
+    const bulletMat = new THREE.MeshBasicMaterial({ color: 0xfff000 });
+    const bullet = new THREE.Mesh(bulletGeom, bulletMat);
+    
+    bullet.position.copy(player.position);
+    bullet.quaternion.copy(player.quaternion);
+    
+    // Velocity vector based on rotation
+    const velocity = new THREE.Vector3(0, 0, -2);
+    velocity.applyQuaternion(player.quaternion);
+    
+    bullet.userData = { velocity, life: 100 };
+    bullets.push(bullet);
+    scene.add(bullet);
+    
+    gameState.lastFire = now;
+}
+
+function handleCollisions() {
+    asteroids.forEach((ast, aIdx) => {
+        // Distance check
+        const d = player.position.distanceTo(ast.position);
+        if (d < ast.userData.radius + 1) {
+            gameState.hp -= 0.5;
+            updateUI();
+        }
+
+        bullets.forEach((b, bIdx) => {
+            if (b.position.distanceTo(ast.position) < ast.userData.radius) {
+                // Destroy Asteroid
+                scene.remove(ast);
+                asteroids.splice(aIdx, 1);
+                scene.remove(b);
+                bullets.splice(bIdx, 1);
+                
+                gameState.score += 100;
+                gameState.xp += 20;
+                spawnAsteroid(); // Replenish
+                updateUI();
+            }
+        });
+    });
+}
+
+/**
+ * GAME LOOP
+ */
+function updateUI() {
+    document.getElementById('hp-bar').style.width = gameState.hp + "%";
+    document.getElementById('xp-bar').style.width = (gameState.xp % 100) + "%";
+    document.getElementById('score').innerText = gameState.score;
+    
+    if (gameState.xp >= gameState.lvl * 100) {
+        gameState.lvl++;
+        document.getElementById('lvl').innerText = gameState.lvl;
+    }
+
+    if (gameState.hp <= 0 && gameState.active) {
+        gameState.active = false;
+        document.getElementById('overlay').style.display = 'flex';
+    }
+}
+
+function animate() {
+    if (!gameState.active) return;
+    requestAnimationFrame(animate);
+
+    const delta = clock.getDelta();
+
+    // 1. Handling Rotation (6DOF)
+    if (keys['KeyW']) player.rotateX(CONFIG.ROTATION_SPEED);
+    if (keys['KeyS']) player.rotateX(-CONFIG.ROTATION_SPEED);
+    if (keys['KeyA']) player.rotateZ(CONFIG.ROTATION_SPEED);
+    if (keys['KeyD']) player.rotateZ(-CONFIG.ROTATION_SPEED);
+
+    // 2. Forward Movement
+    const moveDir = new THREE.Vector3(0, 0, -1);
+    moveDir.applyQuaternion(player.quaternion);
+    let currentSpeed = keys['ShiftLeft'] ? CONFIG.PLAYER_SPEED * 2 : CONFIG.PLAYER_SPEED;
+    player.position.addScaledVector(moveDir, currentSpeed);
+
+    // 3. Shooting
+    if (keys['Space']) shoot();
+
+    // 4. Update Bullets
+    bullets.forEach((b, i) => {
+        b.position.add(b.userData.velocity);
+        b.userData.life--;
+        if(b.userData.life <= 0) {
+            scene.remove(b);
+            bullets.splice(i, 1);
+        }
+    });
+
+    // 5. Camera Follow (Smooth Lerp)
+    const idealOffset = new THREE.Vector3(0, 2, 10);
+    idealOffset.applyQuaternion(player.quaternion);
+    idealOffset.add(player.position);
+    camera.position.lerp(idealOffset, 0.1);
+    camera.lookAt(player.position);
+
+    // 6. Asteroid animation
+    asteroids.forEach(a => {
+        a.rotation.x += a.userData.rotationSpeed;
+        a.rotation.y += a.userData.rotationSpeed;
+        
+        // Loop asteroid positions so the world feels infinite
+        if (a.position.distanceTo(player.position) > 600) {
+            const dir = new THREE.Vector3().subVectors(a.position, player.position).normalize();
+            a.position.addScaledVector(dir, -1100);
+        }
+    });
+
+    handleCollisions();
+    renderer.render(scene, camera);
+}
+
+init();
+
+</script>
+</body>
+</html>
