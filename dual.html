@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Element Quest: 56 Levels Fixed</title>
+    <style>
+        body { margin: 0; background: #1a1a1a; display: flex; flex-direction: column; align-items: center; font-family: sans-serif; color: #00ff00; }
+        canvas { border: 5px solid #444; background: #222; margin-top: 20px; }
+        .ui { margin: 10px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="ui">
+        <h1 id="levelTitle">Level 1</h1>
+        <p>Red: WASD | Blue: Arrows | Reset: R</p>
+    </div>
+    <canvas id="gameCanvas" width="800" height="450"></canvas>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+let currentLevel = 0;
+const gravity = 0.5;
+
+const levels = [
+    {
+        title: "Level 1: The Beginning",
+        platforms: [{ x: 0, y: 400, w: 800, h: 50 }],
+        hazards: [],
+        goals: { p1: {x: 600, y: 350}, p2: {x: 700, y: 350} }
+    },
+    {
+        title: "Level 2: The Gap",
+        platforms: [
+            { x: 0, y: 400, w: 300, h: 50 }, 
+            { x: 500, y: 400, w: 300, h: 50 },
+            { x: 300, y: 400, w: 200, h: 50 }  // Platform for Red to walk across lava
+        ],
+        hazards: [{ x: 300, y: 450, w: 200, h: 20, type: 'lava' }], 
+        goals: { p1: {x: 600, y: 350}, p2: {x: 700, y: 350} }
+    }
+];
+
+// Generator for the rest
+for (let i = 3; i <= 56; i++) {
+    levels.push({
+        title: `Level ${i}`,
+        platforms: [{ x: 0, y: 400, w: 100, h: 50 }, { x: 400, y: 300, w: 100, h: 20 }, { x: 700, y: 200, w: 100, h: 20 }],
+        hazards: [{ x: 100, y: 430, w: 600, h: 20, type: i % 2 === 0 ? 'lava' : 'water' }],
+        goals: { p1: {x: 720, y: 150}, p2: {x: 760, y: 150} }
+    });
+}
+
+class Player {
+    constructor(color, controls) {
+        this.color = color;
+        this.controls = controls;
+        this.reset();
+    }
+
+    reset() {
+        this.x = (this.color === '#ff4444') ? 50 : 100;
+        this.y = 300;
+        this.w = 30; this.h = 30;
+        this.vx = 0; this.vy = 0;
+        this.grounded = false;
+        this.inGoal = false;
+    }
+
+    update(keys, level) {
+        // Movement
+        if (keys[this.controls.left]) this.vx = -4;
+        else if (keys[this.controls.right]) this.vx = 4;
+        else this.vx = 0;
+
+        if (keys[this.controls.up] && this.grounded) {
+            this.vy = -11;
+            this.grounded = false;
+        }
+
+        this.vy += gravity;
+        this.x += this.vx;
+        this.y += this.vy;
+
+        // PLATFORM COLLISION (Only solid floors)
+        this.grounded = false;
+        level.platforms.forEach(p => {
+            if (this.x < p.x + p.w && this.x + this.w > p.x &&
+                this.y < p.y + p.h && this.y + this.h > p.y) {
+                if (this.vy > 0 && this.y + this.h - this.vy <= p.y) {
+                    this.y = p.y - this.h;
+                    this.vy = 0;
+                    this.grounded = true;
+                }
+            }
+        });
+
+        // HAZARD COLLISION (Kill logic only)
+        if (level.hazards) {
+            level.hazards.forEach(h => {
+                if (this.x < h.x + h.w && this.x + this.w > h.x &&
+                    this.y < h.y + h.h && this.y + this.h > h.y) {
+                    // Only blue dies in lava
+                    if (this.color === '#4444ff' && h.type === 'lava') initLevel(currentLevel); 
+                }
+            });
+        }
+
+        // Goal Logic
+        const g = (this.color === '#ff4444') ? level.goals.p1 : level.goals.p2;
+        this.inGoal = (this.x < g.x + 40 && this.x + this.w > g.x && this.y < g.y + 50 && this.y + this.h > g.y);
+
+        if (this.y > canvas.height) initLevel(currentLevel);
+    }
+
+    draw() {
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x, this.y, this.w, this.h);
+        if (this.inGoal) {
+            ctx.strokeStyle = "white";
+            ctx.lineWidth = 3;
+            ctx.strokeRect(this.x, this.y, this.w, this.h);
+        }
+    }
+}
+
+const p1 = new Player('#ff4444', { left: 'KeyA', right: 'KeyD', up: 'KeyW' });
+const p2 = new Player('#4444ff', { left: 'ArrowLeft', right: 'ArrowRight', up: 'ArrowUp' });
+
+const keys = {};
+window.addEventListener('keydown', e => { 
+    keys[e.code] = true;
+    if(e.code === 'KeyR') initLevel(currentLevel);
+});
+window.addEventListener('keyup', e => keys[e.code] = false);
+
+function initLevel(index) {
+    if (index >= levels.length) {
+        alert("Winner!");
+        currentLevel = 0;
+        index = 0;
+    }
+    document.getElementById('levelTitle').innerText = levels[index].title;
+    p1.reset();
+    p2.reset();
+}
+
+function gameLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const level = levels[currentLevel];
+
+    // Draw Hazards
+    level.hazards.forEach(h => {
+        ctx.fillStyle = h.type === 'lava' ? '#ff4400' : '#00aaff';
+        ctx.fillRect(h.x, h.y, h.w, h.h);
+    });
+
+    // Draw Platforms
+    ctx.fillStyle = '#555';
+    level.platforms.forEach(p => ctx.fillRect(p.x, p.y, p.w, p.h));
+
+    // Draw Doors
+    ctx.globalAlpha = 0.3;
+    ctx.fillStyle = '#ff4444'; ctx.fillRect(level.goals.p1.x, level.goals.p1.y, 40, 50);
+    ctx.fillStyle = '#4444ff'; ctx.fillRect(level.goals.p2.x, level.goals.p2.y, 40, 50);
+    ctx.globalAlpha = 1.0;
+
+    p1.update(keys, level);
+    p2.update(keys, level);
+    p1.draw();
+    p2.draw();
+
+    if (p1.inGoal && p2.inGoal) {
+        currentLevel++;
+        initLevel(currentLevel);
+    }
+    requestAnimationFrame(gameLoop);
+}
+
+initLevel(0);
+gameLoop();
+</script>
+</body>
+</html>
