@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Neon Survivor: Market & Safety</title>
+    <link rel="icon" type="png" sizes="32x32" href="1picon.png?v=1"> 
+    <style>
+        body { margin: 0; background: #050505; color: #fff; font-family: 'Courier New', Courier, monospace; overflow: hidden; }
+        canvas { display: block; background: #0a0a12; }
+        .overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.95); border: 2px solid #00d2ff; padding: 30px; text-align: center; z-index: 100; min-width: 400px; box-shadow: 0 0 30px #00d2ff; display: none; }
+        #start-menu { display: block; }
+        #hud { position: absolute; top: 20px; left: 20px; pointer-events: none; z-index: 10; background: rgba(0,0,0,0.8); padding: 15px; border-radius: 4px; border-left: 4px solid #00d2ff; min-width: 220px; }
+        .stat-text { font-size: 0.85rem; color: #00d2ff; margin: 4px 0; display: block; }
+        #hp-container { width: 100%; height: 10px; background: #222; border: 1px solid #00d2ff; margin: 10px 0; }
+        #hp-fill { width: 100%; height: 100%; background: #00d2ff; transition: width 0.2s; }
+        #minimap { position: absolute; top: 20px; right: 20px; width: 90px; height: 90px; border: 2px solid #333; display: grid; grid-template-columns: repeat(3, 1fr); background: rgba(0,0,0,0.6); }
+        .m-cell { border: 1px solid #222; }
+        .m-active { background: #00d2ff; }
+        .btn { background: #00d2ff; border: none; padding: 10px; margin: 5px 0; cursor: pointer; font-weight: bold; width: 100%; color: #000; text-transform: uppercase; font-size: 0.8rem; }
+        .btn:hover { background: #fff; }
+        .market-btn { background: #f1c40f; color: #000; margin-bottom: 10px; }
+        input { background: #111; border: 1px solid #00d2ff; color: #fff; padding: 12px; margin: 15px 0; width: 80%; text-align: center; }
+        #dash-bar { width: 100%; height: 6px; background: #333; margin: 5px 0; }
+        #dash-fill { height: 100%; background: #f1c40f; width: 100%; }
+        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        /* The red pulse for rooms with enemies */
+    .m-danger { background: rgba(255, 71, 87, 0.4); animation: pulse-red 1.5s infinite; }
+
+    @keyframes pulse-red {
+        0% { box-shadow: inset 0 0 2px #ff4757; }
+        50% { box-shadow: inset 0 0 15px #ff4757; background: rgba(255, 71, 87, 0.6); }
+        100% { box-shadow: inset 0 0 2px #ff4757; }
+    }
+    /* Emergency Red Alert Vignette */
+    #low-health-vignette {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        pointer-events: none;
+        box-shadow: inset 0 0 100px rgba(255, 0, 0, 0);
+        transition: box-shadow 0.3s;
+        z-index: 5; /* Behind the menus but above the game */
+    }
+
+    .hp-danger-glow {
+        animation: heart-throb 1s infinite;
+    }
+
+    @keyframes heart-throb {
+        0% { box-shadow: inset 0 0 40px rgba(255, 0, 0, 0.4); }
+        50% { box-shadow: inset 0 0 120px rgba(255, 0, 0, 0.7); }
+        100% { box-shadow: inset 0 0 40px rgba(255, 0, 0, 0.4); }
+    }
+    </style>
+</head>
+<body>
+    <div id="low-health-vignette"></div>
+    <div id="start-menu" class="overlay">
+        <h1 style="color:#00d2ff;">NEON SURVIVOR</h1>
+        <input type="text" id="playerName" placeholder="PILOT ID" maxlength="12">
+        <button class="btn" onclick="startGame()">START MISSION</button>
+        <div id="leader-list" style="font-size:0.7rem; margin-top:15px; text-align:left; color:#00d2ff; border-top: 1px solid #222; padding-top:10px;"></div>
+    </div>
+
+    <div id="pause-menu" class="overlay">
+        <h2 id="pause-title" style="color:#00d2ff; margin-bottom:5px;">SYSTEM MENU</h2>
+        <p style="color:#f1c40f; margin:0 0 15px 0;">CREDITS: <span id="m-gold">0</span></p>
+        
+        <div id="upgrade-section"></div>
+
+        <div id="market-section">
+            <h3 style="font-size:0.9rem; border-top:1px solid #333; padding-top:10px;">BLACK MARKET (100g)</h3>
+            <div class="shop-grid">
+                <button class="btn market-btn" onclick="buyPermanent('dmg')">ATK POWER +2</button>
+                <button class="btn market-btn" onclick="buyPermanent('spd')">THRUSTERS +0.5</button>
+            </div>
+            <h3 style="font-size:0.8rem; margin-top:10px;">NEON SKINS (100g)</h3>
+            <div id="skin-pallette" style="display: flex; justify-content: center; gap: 10px; margin-top: 5px;">
+                <div onclick="setSkin('#ff00ff')" style="width:30px; height:30px; border-radius:50%; background:#ff00ff; cursor:pointer; border:2px solid #fff;"></div>
+                <div onclick="setSkin('#00ff00')" style="width:30px; height:30px; border-radius:50%; background:#00ff00; cursor:pointer; border:2px solid #fff;"></div>
+                <div onclick="setSkin('#ffff00')" style="width:30px; height:30px; border-radius:50%; background:#ffff00; cursor:pointer; border:2px solid #fff;"></div>
+                <div onclick="setSkin('#00d2ff')" style="width:30px; height:30px; border-radius:50%; background:#00d2ff; cursor:pointer; border:2px solid #fff;"></div>
+            </div>
+        </div>
+
+        <button id="resume-btn" class="btn" style="background:#55efc4; margin-top:15px;" onclick="togglePause(false)">RESUME</button>
+    </div>
+
+    <div id="death-screen" class="overlay">
+        <h1 style="color:#ff4757;">MISSION FAILED</h1>
+        <p id="final-stats-log" style="color:#00d2ff;"></p>
+        <button class="btn" onclick="location.reload()">RE-INITIALIZE</button>
+    </div>
+
+    <div id="victory-screen" class="overlay">
+        <div style="border: 5px double #f1c40f; padding: 20px;">
+            <h2>VICTORY CERTIFIED</h2>
+            <p>Pilot <b id="cert-name"></b> cleared Sector 56</p>
+        </div>
+        <button class="btn" onclick="location.reload()" style="margin-top:20px;">FINISH</button>
+    </div>
+
+    <div id="hud" style="display:none">
+        <span class="stat-text" id="disp-name">PILOT: ---</span>
+        <div id="hp-container"><div id="hp-fill"></div></div>
+        <span class="stat-text">LVL: <span id="h-lvl">1</span> | KILLS: <span id="h-kills">0</span> | GOLD: <span id="h-gold">0</span></span>
+        <hr style="border:0; border-top:1px solid #333; margin:8px 0;">
+        <span class="stat-text" style="color:#f1c40f;">DASH CHARGE:</span>
+        <div id="dash-bar"><div id="dash-fill"></div></div>
+        <div style="margin-top:10px; background:rgba(0,0,0,0.5); padding:5px; font-size: 0.75rem;">
+            <span>ATK: <span id="s-dmg">0</span></span> | 
+            <span>SPD: <span id="s-spd">0</span></span> | 
+            <span>FR: <span id="s-fr">0</span>ms</span>
+        </div>
+    </div>
+    
+
+    <div id="minimap" style="display:none">
+        <div class="m-cell" id="m00"></div><div class="m-cell" id="m10"></div><div class="m-cell" id="m20"></div>
+        <div class="m-cell" id="m01"></div><div class="m-cell" id="m11"></div><div class="m-cell" id="m21"></div>
+        <div class="m-cell" id="m02"></div><div class="m-cell" id="m12"></div><div class="m-cell" id="m22"></div>
+    </div>
+<div id="boss-hud" style="display:none; position:absolute; top:20px; left:50%; transform:translateX(-50%); width:60%; text-align:center; z-index:20;">
+    <span style="color:#ff4757; font-weight:bold; letter-spacing:3px;">OMEGA SENTINEL</span>
+    <div style="width:100%; height:15px; background:#222; border:2px solid #ff4757; margin-top:5px;">
+        <div id="boss-hp-fill" style="width:100%; height:100%; background:#ff4757; transition:width 0.1s;"></div>
+    </div>
+</div>
+    <canvas id="gameCanvas"></canvas>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    window.addEventListener('resize', resize);
+    resize();
+
+    let player = {
+        name: "", x: 0, y: 0, hp: 100, maxHp: 100, regen: 0.015,
+        fireInterval: 500, speed: 4, damage: 2, level: 1, kills: 0, gold: 0,
+        color: '#00d2ff', sectorX: 1, sectorY: 1, dashCooldown: 0, dashDist: 0, 
+        lastDir: {x: 0, y: -1}
+        
+    };
+
+    let worldGrid = {}, enemies = [], bullets = [], walls = [], keys = {}, isPaused = true, isLeveling = false, bossSpawned = false, lastShot = 0;
+
+function initWorld() {
+        for(let x=0; x<3; x++) {
+            for(let y=0; y<3; y++) {
+                worldGrid[`${x},${y}`] = { 
+                    walls: generateWalls(),
+                    enemies: [] // Add this line
+                };
+            }
+        }
+    }
+
+    function generateWalls() {
+        let wList = [];
+        let margin = 120; 
+        for(let i=0; i<6; i++) {
+            wList.push({
+                x: margin + Math.random()*(canvas.width - 240),
+                y: margin + Math.random()*(canvas.height - 240),
+                w: 100, h: 100
+            });
+        }
+        return wList;
+    }
+
+    function clearSpawnArea() {
+        // Removes any wall within 120px of the player's current X,Y
+        walls = walls.filter(w => {
+            let centerX = w.x + w.w/2;
+            let centerY = w.y + w.h/2;
+            return Math.hypot(player.x - centerX, player.y - centerY) > 130;
+        });
+        // Update the world grid so the wall doesn't come back when returning
+        worldGrid[`${player.sectorX},${player.sectorY}`].walls = walls;
+    }
+
+window.addEventListener('keydown', e => {
+    keys[e.code] = true;
+    // Check if Escape is pressed
+    if (e.code === 'Escape') {
+        // Only allow pausing/unpausing if the player ISN'T currently in the upgrade menu
+        if (!isLeveling && !document.getElementById('start-menu').style.display.includes('block')) {
+            togglePause(false);
+        }
+    }
+
+
+    if (e.code === 'Space' && player.dashCooldown <= 0 && !isPaused) {
+        player.dashDist = 18; 
+        player.dashCooldown = 120;
+    }
+});
+    window.addEventListener('keyup', e => keys[e.code] = false);
+
+    function startGame() {
+        player.name = document.getElementById('playerName').value.trim() || "PILOT";
+        document.getElementById('disp-name').innerText = "PILOT: " + player.name;
+        initWorld();
+        player.x = canvas.width/2; player.y = canvas.height/2;
+        document.getElementById('start-menu').style.display = 'none';
+        document.getElementById('hud').style.display = 'block';
+        document.getElementById('minimap').style.display = 'grid';
+        isPaused = false;
+        loadSector();
+        clearSpawnArea();
+        requestAnimationFrame(loop);
+    }
+
+function loadSector() {
+        let s = worldGrid[`${player.sectorX},${player.sectorY}`];
+        enemies = s.enemies; // Load this room's specific enemies
+        walls = s.walls;
+        clearSpawnArea(); 
+    }
+function togglePause(forcedLevel = false) {
+    // 1. If we are in level-up mode, block the Escape key from closing the menu
+    if (isLeveling && !forcedLevel) return; 
+
+    if (forcedLevel) isLeveling = true;
+    isPaused = !isPaused;
+
+    const menu = document.getElementById('pause-menu');
+    const resumeBtn = document.getElementById('resume-btn');
+    const market = document.getElementById('market-section');
+    const upDiv = document.getElementById('upgrade-section');
+    
+    menu.style.display = isPaused ? 'block' : 'none';
+
+    if (isLeveling) {
+        // 2. LEVEL UP STATE: Hide normal menu stuff, show upgrades
+        market.style.display = 'none';
+        resumeBtn.style.display = 'none'; // Hide resume so they can't skip
+        document.getElementById('pause-title').innerText = "SELECT UPGRADE";
+        
+        upDiv.innerHTML = '';
+        const options = [
+            {t:"MAX SPEED +1", f:()=>player.speed+=1}, 
+            {t:"ATTACK POWER +5", f:()=>player.damage+=5}, 
+            {t:"FIRE RATE +20%", f:()=>player.fireInterval*=0.8}
+        ];
+        
+        options.forEach(o => {
+            let b = document.createElement('button');
+            b.className = 'btn';
+            b.style.marginBottom = "10px";
+            b.innerText = o.t;
+            b.onclick = () => {
+                o.f();
+                isLeveling = false;
+                isPaused = false;
+                menu.style.display = 'none';
+                resumeBtn.style.display = 'block'; // Bring it back for later
+            };
+            upDiv.appendChild(b);
+        });
+    } else {
+        // 3. NORMAL PAUSE STATE: Show market and resume button
+        market.style.display = 'block';
+        resumeBtn.style.display = 'block';
+        document.getElementById('pause-title').innerText = "SYSTEM PAUSED";
+        upDiv.innerHTML = ''; // Clear any leftover upgrade buttons
+    }
+}
+    function buyPermanent(type) {
+        if(player.gold >= 100) {
+            player.gold -= 100;
+            if(type === 'dmg') player.damage += 2;
+            if(type === 'spd') player.speed += 0.5;
+            if(type === 'hp') { player.maxHp += 20; player.hp = player.maxHp; }
+        }
+    }
+    
+    // Add this new function right below it for the circle skins
+    function setSkin(newColor) {
+        if(player.gold >= 100) {
+            player.gold -= 100;
+            player.color = newColor;
+        }
+    }
+
+function update() {
+        if(isPaused) return;
+
+        // Health Regen
+        if(player.hp < player.maxHp) {
+            player.hp = Math.min(player.maxHp, player.hp + player.regen);
+        }
+
+        // Movement Calculation
+        let mx = 0, my = 0;
+        if(keys['KeyW']) my--; if(keys['KeyS']) my++;
+        if(keys['KeyA']) mx--; if(keys['KeyD']) mx++;
+        if(mx !== 0 || my !== 0) player.lastDir = {x: mx, y: my};
+        
+        let spd = (player.dashDist > 0) ? player.speed * 4 : player.speed;
+        let finalX = (player.dashDist > 0) ? player.lastDir.x : mx;
+        let finalY = (player.dashDist > 0) ? player.lastDir.y : my;
+        if(player.dashDist > 0) player.dashDist--;
+
+        let ox = player.x, oy = player.y;
+        player.x += finalX * spd; player.y += finalY * spd;
+
+        // Wall Collisions
+        walls.forEach(w => {
+            if(player.x+12 > w.x && player.x-12 < w.x+w.w && player.y+12 > w.y && player.y-12 < w.y+w.h) { 
+                player.x = ox; 
+                player.y = oy; 
+            }
+        });
+
+// 1. Calculate Transitions & World Bounds
+        let shifted = false;
+        let oldX = player.sectorX;
+        let oldY = player.sectorY;
+
+        // Left Transition or Wall
+        if (player.x < 0) {
+            if (player.sectorX > 0) { 
+                player.sectorX--; player.x = canvas.width - 30; shifted = true; 
+            } else { player.x = 0; } // Stop at world edge
+        } 
+        // Right Transition or Wall
+        else if (player.x > canvas.width) {
+            if (player.sectorX < 2) { 
+                player.sectorX++; player.x = 30; shifted = true; 
+            } else { player.x = canvas.width; } // Stop at world edge
+        }
+
+        // Up Transition or Wall
+        if (player.y < 0) {
+            if (player.sectorY > 0) { 
+                player.sectorY--; player.y = canvas.height - 30; shifted = true; 
+            } else { player.y = 0; } // Stop at world edge
+        } 
+        // Down Transition or Wall
+        else if (player.y > canvas.height) {
+            if (player.sectorY < 2) { 
+                player.sectorY++; player.y = 30; shifted = true; 
+            } else { player.y = canvas.height; } // Stop at world edge
+        }
+
+        // 2. Execute the room shift
+        if (shifted) {
+            worldGrid[`${oldX},${oldY}`].enemies = [...enemies]; 
+            bullets = []; 
+            loadSector(); 
+            return; // Skip the rest of this frame to prevent glitches
+        }
+
+        if (shifted) {
+            worldGrid[`${oldX},${oldY}`].enemies = [...enemies]; 
+            bullets = []; 
+            loadSector(); 
+            return; // Stop processing this frame to prevent errors
+        }
+
+        if(player.dashCooldown > 0) player.dashCooldown--;
+
+        // Spawning Logic
+        if(player.level === 56 && !bossSpawned) {
+            enemies = []; spawnBoss(); bossSpawned = true;
+        }
+        if(player.level < 56 && Math.random() < 0.02) {
+            let t = (Math.random() * player.level > 10) ? 2 : (Math.random() * player.level > 5 ? 1 : 0);
+            spawnEnemy(t, Math.random()*canvas.width, -50);
+        }
+
+        // Enemy AI & Bullet Collision
+        enemies.forEach((e, i) => {
+            let a = Math.atan2(player.y - e.y, player.x - e.x);
+            e.x += Math.cos(a)*e.speed; e.y += Math.sin(a)*e.speed;
+            if(Math.hypot(e.x-player.x, e.y-player.y) < 22) player.hp -= e.dmg;
+            
+            bullets.forEach((b, bi) => {
+                if(Math.hypot(e.x-b.x, e.y-b.y) < 25) {
+                    e.hp -= player.damage; bullets.splice(bi,1);
+                    if(e.hp <= 0) {
+                        enemies.splice(i,1); player.kills++; player.gold += (e.tier + 1);
+                        if(player.level < 56 && player.kills % 10 === 0) { player.level++; togglePause(true); }
+                    }
+                }
+            });
+        });
+
+        // Shooting
+        if(enemies.length > 0 && Date.now() - lastShot > player.fireInterval) {
+            let a = Math.atan2(enemies[0].y - player.y, enemies[0].x - player.x);
+            bullets.push({x: player.x, y: player.y, vx: Math.cos(a)*12, vy: Math.sin(a)*12});
+            lastShot = Date.now();
+        }
+
+        bullets.forEach((b, i) => { 
+            b.x += b.vx; b.y += b.vy; 
+            if(b.x<0||b.x>canvas.width||b.y<0||b.y>canvas.height) bullets.splice(i,1); 
+        });
+
+        if(player.hp <= 0) {
+            document.getElementById('final-stats-log').innerText = `KILLS: ${player.kills} | LEVEL: ${player.level}`;
+            document.getElementById('death-screen').style.display = 'block'; 
+            isPaused = true;
+        }
+
+        updateUI();
+    }
+    function spawnEnemy(tier, x, y) {
+        let colors = ['#ff4757', '#2ecc71', '#a29bfe', '#f1c40f', '#ffffff'];
+        let actualTier = Math.min(tier, colors.length - 1);
+        let mult = Math.pow(1.68, actualTier);
+        enemies.push({ 
+            x, y, 
+            tier: actualTier, 
+            color: colors[actualTier], 
+            hp: (10 + player.level*3)*mult, 
+            speed: 1.4+(actualTier*0.2), 
+            dmg: 0.4*mult 
+        });
+    }
+    function spawnBoss() {
+        enemies.push({ x: canvas.width/2, y: -100, tier: 4, color: '#fff', hp: 3000, speed: 1.5, dmg: 5 });
+    }
+
+function updateUI() {
+        // 1. HP & Red Alert Logic
+        const hpPercent = (player.hp / player.maxHp) * 100;
+        document.getElementById('hp-fill').style.width = hpPercent + "%";
+
+        const vignette = document.getElementById('low-health-vignette');
+        if (vignette) {
+            if (hpPercent < 25) {
+                vignette.classList.add('hp-danger-glow');
+            } else {
+                vignette.classList.remove('hp-danger-glow');
+            }
+        }
+
+        // 2. Top HUD Stats
+        document.getElementById('h-lvl').innerText = player.level;
+        document.getElementById('h-kills').innerText = player.kills;
+        document.getElementById('h-gold').innerText = player.gold;
+
+        // 3. Market & Detailed Stats
+        document.getElementById('m-gold').innerText = player.gold;
+        document.getElementById('s-dmg').innerText = player.damage.toFixed(1);
+        document.getElementById('s-spd').innerText = player.speed.toFixed(1);
+        document.getElementById('s-fr').innerText = Math.round(player.fireInterval);
+        
+        // 4. Dash Bar
+        document.getElementById('dash-fill').style.width = (1 - Math.max(0, player.dashCooldown)/120)*100 + "%";
+
+        // 5. Minimap Pulse Logic
+        document.querySelectorAll('.m-cell').forEach(cell => {
+            const idStr = cell.id.replace('m', '');
+            const cx = idStr[0];
+            const cy = idStr[1];
+
+            cell.classList.remove('m-active', 'm-danger');
+
+            if(player.sectorX == cx && player.sectorY == cy) {
+                cell.classList.add('m-active');
+            } else {
+                const roomData = worldGrid[`${cx},${cy}`];
+                if(roomData && roomData.enemies && roomData.enemies.length > 0) {
+                    cell.classList.add('m-danger');
+                }
+            }
+        });
+    }
+ function draw() {
+        // 1. Clear the screen
+        ctx.fillStyle = '#050505'; 
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // 2. Draw the Neon Crates
+        walls.forEach(w => {
+            // Box Body
+            ctx.fillStyle = '#5d4037'; 
+            ctx.fillRect(w.x, w.y, w.w, w.h); 
+
+            // Neon Outline
+            ctx.strokeStyle = '#00f2ff'; 
+            ctx.lineWidth = 3;
+            ctx.shadowBlur = 15; 
+            ctx.shadowColor = '#00f2ff';
+            ctx.strokeRect(w.x, w.y, w.w, w.h); 
+
+            // The "X"
+            ctx.beginPath();
+            ctx.moveTo(w.x + 15, w.y + 15); 
+            ctx.lineTo(w.x + w.w - 15, w.y + w.h - 15);
+            ctx.moveTo(w.x + w.w - 15, w.y + 15); 
+            ctx.lineTo(w.x + 15, w.y + w.h - 15);
+            ctx.stroke();
+            
+            // Reset shadow immediately so it doesn't blur the player
+            ctx.shadowBlur = 0;
+        });
+
+        // 3. Draw Player
+        ctx.fillStyle = player.color; 
+        ctx.beginPath(); 
+        ctx.arc(player.x, player.y, 14, 0, Math.PI * 2); 
+        ctx.fill();
+
+        // 4. Draw Enemies
+        enemies.forEach(e => {
+            ctx.fillStyle = e.color;
+            ctx.beginPath(); 
+            ctx.moveTo(e.x, e.y - 18); 
+            ctx.lineTo(e.x + 15, e.y + 15); 
+            ctx.lineTo(e.x - 15, e.y + 15); 
+            ctx.fill();
+        });
+
+        // 5. Draw Bullets
+        ctx.fillStyle = '#fff'; 
+        bullets.forEach(b => ctx.fillRect(b.x - 3, b.y - 3, 6, 6));
+    }
+    function loop() { 
+        update(); 
+        draw(); 
+        requestAnimationFrame(loop);
+    }   
+
+    function loop() { update(); draw(); requestAnimationFrame(loop); }
+</script>
+</body>
+</html>

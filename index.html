@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Arcade Hub</title>
+    <style>
+        /* Retro Color Palette */
+        body {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #000;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 3px solid #32CD32; /* Lime Green accent */
+        }
+
+        h1 {
+            margin: 0;
+            letter-spacing: 2px;
+            color: #32CD32;
+            text-transform: uppercase;
+        }
+
+        /* The Grid Container */
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 20px;
+            padding: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Individual Game Card */
+        .game-card {
+            background-color: #2a2a2a;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.2s, border 0.2s;
+            border: 2px solid transparent;
+            text-align: center;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+        }
+
+        .game-card:hover {
+            transform: scale(1.05);
+            border: 2px solid #32CD32;
+            background-color: #333;
+        }
+
+        .game-card img {
+            width: 100%;
+            aspect-ratio: 1/1;
+            object-fit: cover;
+            display: block;
+        }
+
+        .game-title {
+            padding: 10px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            color: #eee;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 0.8rem;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>AI Arcade Hub</h1>
+</header>
+
+<div class="game-grid">
+    <a href="3dgame.html" class="game-card">
+        <img src="spacerocket.png" alt="Space rocket shooter">
+        <div class="game-title">Space Rocket</div>
+    </a>
+
+    <a href="1p.html" class="game-card">
+        <img src="neonsurvivor.png" alt="Neon Survivor">
+        <div class="game-title">Neon Survivor</div>
+    </a>
+
+    <a href="game3.html" class="game-card">
+        <img src="your-image-3.jpg" alt="AI Game">
+        <div class="game-title">Pixel Racer AI</div>
+    </a>
+        <a href="game3.html" class="game-card">
+        <img src="your-image-3.jpg" alt="AI Game">
+        <div class="game-title">Pixel Racer AI</div>
+    </a>
+    <a href="game3.html" class="game-card">
+        <img src="your-image-3.jpg" alt="AI Game">
+        <div class="game-title">Pixel Racer AI</div>
+    </a>
+    <a href="game3.html" class="game-card">
+        <img src="your-image-3.jpg" alt="AI Game">
+        <div class="game-title">Pixel Racer AI</div>
+    </a>
+
+
+    </div>
+
+<footer>
+    &copy; 2026 AI Arcade Hub
+</footer>
+
+</body>
+</html>
