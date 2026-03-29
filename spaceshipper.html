@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Crimson Void: Co-op Protocol</title>
+    <style>
+        body { margin: 0; background: #050000; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
+        canvas { display: block; }
+        #ui {
+            position: absolute; top: 20px; left: 20px; color: #ff1a1a;
+            text-shadow: 0 0 10px #800000; pointer-events: none; width: 300px;
+        }
+        #upgrade-menu {
+            position: absolute; top: 20px; right: 20px; background: rgba(40,0,0,0.8);
+            padding: 15px; border: 1px solid #ff1a1a; color: white; border-radius: 8px;
+            display: none; pointer-events: all;
+        }
+        .stat-btn { background: #800000; color: white; border: none; padding: 5px 10px; cursor: pointer; margin: 5px; }
+        .stat-btn:disabled { background: #333; }
+    </style>
+</head>
+<body>
+
+<div id="ui">
+    <div style="font-size: 1.5rem; font-weight: bold;">HULL: <span id="hp">100</span>% | WAVE: <span id="wave">1</span></div>
+    <div>POINTS: <span id="pts">0</span></div>
+    <div id="msg" style="color: yellow; font-weight: bold;"></div>
+</div>
+
+<div id="upgrade-menu">
+    <h3>SHIP UPGRADES</h3>
+    <div>Speed: <span id="s-speed">0</span>/25 <button class="stat-btn" onclick="upgrade('speed')">+</button></div>
+    <div>Fire Rate: <span id="s-rate">0</span>/25 <button class="stat-btn" onclick="upgrade('rate')">+</button></div>
+    <div>Damage: <span id="s-dmg">0</span>/25 <button class="stat-btn" onclick="upgrade('dmg')">+</button></div>
+    <p style="font-size: 0.8rem;">Press 'E' to toggle menu</p>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+// --- CONFIG ---
+const state = {
+    hp: 100, pts: 0, wave: 0, 
+    stats: { speed: 0, rate: 0, dmg: 0 },
+    keys: {},
+    enemies: [], rocks: [], bullets: [], 
+    hearts: [],
+    cam: { x: 0, y: 0 },
+    bossActive: false,
+    certAwarded: false 
+};
+
+const ship = {
+    x: 0, y: 0, radius: 40, turretAngle: 0,
+    velX: 0, velY: 0, lastShot: 0
+};
+
+// --- PROCEDURAL GENERATION ---
+for(let i=0; i<200; i++) {
+    state.rocks.push({
+        x: (Math.random() - 0.5) * 10000,
+        y: (Math.random() - 0.5) * 10000,
+        r: 60 + Math.random() * 100
+    });
+}
+
+// --- INPUT ---
+window.addEventListener('keydown', e => {
+    state.keys[e.code] = true;
+    if(e.code === 'KeyE') {
+        const menu = document.getElementById('upgrade-menu');
+        menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    }
+    if (e.code === 'KeyR' && state.hp <= 0) location.reload();
+});
+window.addEventListener('keyup', e => state.keys[e.code] = false);
+
+function upgrade(type) {
+    if(state.pts > 0 && state.stats[type] < 25) {
+        state.pts--;
+        state.stats[type]++;
+        updateUI();
+    }
+}
+
+function updateUI() {
+    document.getElementById('hp').innerText = Math.floor(Math.max(0, state.hp));
+    document.getElementById('pts').innerText = state.pts;
+    document.getElementById('wave').innerText = state.wave;
+    document.getElementById('s-speed').innerText = state.stats.speed;
+    document.getElementById('s-rate').innerText = state.stats.rate;
+    document.getElementById('s-dmg').innerText = state.stats.dmg;
+}
+
+class Alien {
+    constructor(x, y, scale = 1, isBoss = false) {
+        this.x = x; this.y = y;
+        this.scale = scale;
+        this.isBoss = isBoss;
+        this.hp = (isBoss ? 50 : 2) * (1 + state.stats.dmg * 0.2);
+        this.r = 20 * scale;
+        this.speed = isBoss ? 1.5 : 3;
+    }
+    update() {
+        let dx = ship.x - this.x;
+        let dy = ship.y - this.y;
+        let dist = Math.sqrt(dx*dx + dy*dy);
+        if(dist > 0) {
+            this.x += (dx/dist) * this.speed;
+            this.y += (dy/dist) * this.speed;
+        }
+    }
+}
+
+function loop() {
+    if (state.hp <= 0) {
+        state.hp = 0;
+        updateUI();
+        ctx.fillStyle = "rgba(0,0,0,0.7)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "white";
+        ctx.font = "bold 50px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("MISSION FAILED", canvas.width/2, canvas.height/2);
+        ctx.font = "20px Arial";
+        ctx.fillText("Press 'R' to Restart", canvas.width/2, canvas.height/2 + 60);
+        return; 
+    }
+
+    // Movement
+    let speedMult = 1 + (state.stats.speed * 0.1);
+    if(state.keys['KeyW']) ship.velY -= 0.5 * speedMult;
+    if(state.keys['KeyS']) ship.velY += 0.5 * speedMult;
+    if(state.keys['KeyA']) ship.velX -= 0.5 * speedMult;
+    if(state.keys['KeyD']) ship.velX += 0.5 * speedMult;
+    ship.x += ship.velX; ship.y += ship.velY;
+    ship.velX *= 0.95; ship.velY *= 0.95;
+
+    state.cam.x = ship.x - canvas.width/2;
+    state.cam.y = ship.y - canvas.height/2;
+
+    // Gunner
+    if(state.keys['ArrowLeft']) ship.turretAngle -= 0.08;
+    if(state.keys['ArrowRight']) ship.turretAngle += 0.08;
+    let fireDelay = 400 - (state.stats.rate * 14);
+    if(state.keys['ArrowUp'] && Date.now() - ship.lastShot > fireDelay) {
+        state.bullets.push({
+            x: ship.x, y: ship.y,
+            vx: Math.cos(ship.turretAngle) * 12,
+            vy: Math.sin(ship.turretAngle) * 12,
+            dmg: 1 + (state.stats.dmg * 0.5)
+        });
+        ship.lastShot = Date.now();
+    }
+
+    // Wave Logic
+    if(state.enemies.length === 0 && !state.bossActive) {
+        state.wave++;
+        state.pts++; 
+        if(state.wave === 56) {
+            document.getElementById('msg').innerText = "WARNING: BOSS DETECTED";
+            state.enemies.push(new Alien(ship.x + 800, ship.y, 4, true));
+            state.bossActive = true;
+        } else {
+            let count = 5 + Math.floor(state.wave / 8) * 3;
+            for(let i=0; i<count; i++) {
+                // Spawn aliens outside current view
+                let angle = Math.random() * Math.PI * 2;
+                state.enemies.push(new Alien(ship.x + Math.cos(angle)*800, ship.y + Math.sin(angle)*800));
+            }
+        }
+    }
+
+    // Collisions: Rocks
+    state.rocks.forEach(r => {
+        let dx = ship.x - r.x; let dy = ship.y - r.y;
+        let dist = Math.sqrt(dx*dx + dy*dy);
+        if(dist < ship.radius + r.r) {
+            ship.velX = dx/dist * 5; ship.velY = dy/dist * 5;
+            state.hp -= 0.1;
+        }
+    });
+
+    // Enemy & Bullet logic
+    state.enemies.forEach((en, i) => {
+        en.update();
+        state.bullets.forEach((b, bi) => {
+            let d = Math.sqrt((en.x-b.x)**2 + (en.y-b.y)**2);
+            if(d < en.r) {
+                en.hp -= b.dmg;
+                state.bullets.splice(bi, 1);
+                if(en.hp <= 0) {
+                    if(Math.random() < 0.10) {
+                        state.hearts.push({ x: en.x, y: en.y, r: 15 });
+                    }
+                    if(en.isBoss) {
+                        if(en.scale > 0.5) {
+                            state.enemies.push(new Alien(en.x-30, en.y, en.scale/2, true));
+                            state.enemies.push(new Alien(en.x+30, en.y, en.scale/2, true));
+                        } else if (state.enemies.length === 1 && !state.certAwarded) {
+                            state.certAwarded = true;
+                            generateCertificate();
+                        }
+                    }
+                    state.enemies.splice(i, 1);
+                }
+            }
+        });
+        if(Math.sqrt((en.x-ship.x)**2 + (en.y-ship.y)**2) < ship.radius + en.r) {
+            state.hp -= 0.5;
+        }
+    });
+
+    // Heart Collection
+    state.hearts.forEach((h, i) => {
+        let dist = Math.sqrt((ship.x - h.x)**2 + (ship.y - h.y)**2);
+        if(dist < ship.radius + h.r) {
+            state.hp = Math.min(100, state.hp + 20);
+            state.hearts.splice(i, 1);
+            updateUI();
+        }
+    });
+
+    render();
+    updateUI();
+    requestAnimationFrame(loop);
+}
+
+function render() {
+    ctx.fillStyle = '#050000';
+    ctx.fillRect(0,0,canvas.width, canvas.height);
+    ctx.save();
+    ctx.translate(-state.cam.x, -state.cam.y);
+
+    // Rocks
+    state.rocks.forEach(r => {
+        ctx.fillStyle = '#300';
+        ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, Math.PI*2); ctx.fill();
+    });
+
+    // Hearts
+    state.hearts.forEach(h => {
+        ctx.fillStyle = '#ff4d4d';
+        ctx.shadowBlur = 15; ctx.shadowColor = 'red';
+        ctx.beginPath(); ctx.arc(h.x, h.y, h.r, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0;
+    });
+
+    // Bullets
+    state.bullets.forEach((b, i) => {
+        b.x += b.vx; b.y += b.vy;
+        ctx.fillStyle = 'yellow';
+        ctx.fillRect(b.x, b.y, 4, 4);
+        if(Math.abs(b.x - ship.x) > 2000) state.bullets.splice(i, 1);
+    });
+
+    // Ship
+    ctx.fillStyle = 'white';
+    ctx.beginPath(); ctx.arc(ship.x, ship.y, ship.radius, 0, Math.PI*2); ctx.fill();
+    
+    // Turret
+    ctx.strokeStyle = 'red'; ctx.lineWidth = 10;
+    ctx.beginPath(); ctx.moveTo(ship.x, ship.y);
+    ctx.lineTo(ship.x + Math.cos(ship.turretAngle)*60, ship.y + Math.sin(ship.turretAngle)*60);
+    ctx.stroke();
+
+    // Aliens
+    state.enemies.forEach(en => {
+        ctx.fillStyle = en.isBoss ? 'purple' : 'green';
+        ctx.beginPath(); ctx.arc(en.x, en.y, en.r, 0, Math.PI*2); ctx.fill();
+    });
+    ctx.restore();
+}
+
+function generateCertificate() {
+    const certCanvas = document.createElement('canvas');
+    certCanvas.width = 800; certCanvas.height = 600;
+    const c = certCanvas.getContext('2d');
+    c.fillStyle = '#1a0000'; c.fillRect(0, 0, 800, 600);
+    c.strokeStyle = '#ff1a1a'; c.lineWidth = 20; c.strokeRect(20, 20, 760, 560);
+    c.fillStyle = '#ff1a1a'; c.font = 'bold 40px Courier New'; c.textAlign = 'center';
+    c.fillText('CRIMSON VOID PROTOCOL', 400, 150);
+    c.fillStyle = 'white'; c.font = '25px Courier New';
+    c.fillText('CERTIFICATE OF SURVIVAL', 400, 220);
+    c.fillText('Wave 56 Boss Neutralized.', 400, 340);
+    const link = document.createElement('a');
+    link.download = 'Win_Certificate.png';
+    link.href = certCanvas.toDataURL();
+    link.click();
+}
+
+loop();
+</script>
+</body>
+</html>
