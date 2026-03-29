@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clicker Tycoon</title>
+<style>
+    #game-container {
+    display: flex;
+    flex-direction: column; /* Stack elements vertically */
+    height: 90vh;           /* Give the container a fixed height */
+    max-height: 800px;      /* But don't let it get too huge */
+}
+
+#upgrades-list {
+    flex-grow: 1;           /* THIS IS THE MAGIC: It pushes the footer down */
+    overflow-y: auto;       /* Keeps the list scrollable */
+    margin: 15px 0;
+    padding-right: 10px;
+}
+
+footer {
+    flex-shrink: 0;         /* Ensures the footer never gets squashed */
+    margin-top: auto;       /* Safety push to the bottom */
+    padding-top: 15px;
+    border-top: 1px solid #330000;
+    font-size: 0.7rem;
+    color: aliceblue;
+    text-align: center;
+}
+    #upgrades-list {
+    max-height: 400px; /* Limits height so it doesn't grow forever */
+    overflow-y: auto;  /* Adds scrollbar */
+    padding-right: 10px;
+    margin-top: 10px;
+}
+/* Optional: Makes the scrollbar look crimson too */
+#upgrades-list::-webkit-scrollbar { width: 6px; }
+#upgrades-list::-webkit-scrollbar-thumb { background: var(--crimson-main); border-radius: 10px; }
+    :root {
+        --bg-dark: #0f0000;
+        --crimson-main: #800000;
+        --crimson-bright: #ff1a1a;
+        --panel: rgba(30, 0, 0, 0.85); /* Semi-transparent to see the bg */
+        --text: #ffe0e0;
+    }
+
+    /* THE ANIMATED BACKGROUND */
+    body {
+        margin: 0;
+        padding: 20px;
+        font-family: 'Segoe UI', sans-serif;
+        background: linear-gradient(45deg, #1a0000, #4d0000, #1a0000, #800000);
+        background-size: 400% 400%;
+        animation: gradientBG 15s ease infinite;
+        display: flex;
+        justify-content: center;
+        min-height: 100vh;
+        color: var(--text);
+    }
+
+    @keyframes gradientBG {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    #game-container {
+        width: 100%;
+        max-width: 500px;
+        background: var(--panel);
+        padding: 2rem;
+        border-radius: 20px;
+        backdrop-filter: blur(10px); /* Blurs the crimson bg behind the panel */
+        border: 1px solid var(--crimson-main);
+        box-shadow: 0 0 30px rgba(128, 0, 0, 0.5);
+    }
+
+    /* SICK ASS CRIMSON BUTTON */
+    #main-click-btn {
+        width: 100%;
+        height: 120px;
+        background: linear-gradient(to bottom, var(--crimson-bright), var(--crimson-main));
+        border: none;
+        border-radius: 12px;
+        color: white;
+        font-size: 1.6rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        cursor: pointer;
+        margin-bottom: 2rem;
+        transition: all 0.1s;
+        box-shadow: 0 0 15px var(--crimson-main), 0 6px 0 #4d0000;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    }
+
+    #main-click-btn:active {
+        transform: translateY(4px);
+        box-shadow: 0 0 5px var(--crimson-main), 0 2px 0 #4d0000;
+    }
+
+    #main-click-btn:hover {
+        filter: brightness(1.2);
+        box-shadow: 0 0 25px var(--crimson-bright), 0 6px 0 #4d0000;
+    }
+
+    .upgrade-card {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(128, 0, 0, 0.3);
+        padding: 12px 16px;
+        margin-bottom: 10px;
+        border-radius: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .buy-btn {
+        background: var(--crimson-main);
+        border: 1px solid var(--crimson-bright);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 4px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .buy-btn:disabled {
+        background: #222;
+        border-color: #444;
+        color: #666;
+    }
+
+    .money-display {
+        font-size: 3rem;
+        color: var(--crimson-bright);
+        text-shadow: 0 0 10px var(--crimson-main);
+    }
+</style>
+</head>
+<body>
+
+<div id="game-container">
+    <div class="stats">
+        <div class="money-display">$<span id="credits">10</span></div>
+        <div class="income-rate">+$<span id="pps">0</span> / sec</div>
+    </div>
+
+    <button id="main-click-btn" onclick="manualClick()">MANUFACTURE (+$1)</button>
+
+    <div id="upgrades-list">
+        </div>
+</div>
+
+<script>
+    const state = {
+    credits: 10,
+    clickValue: 1,
+    isTurboOn: false,
+    upgrades: []
+};
+
+// 1. GENERATE THE DATA
+const buildingNames = ["Blood Scraper", "Crimson Forge", "Soul Extractor", "Void Reactor", "Abyssal Miner", "Dark Matter Lab", "Nebula Siphon", "Galactic Grinder", "Reality Warp", "Entropy Engine", "Event Horizon", "Omega Core"];
+const clickUpgradeNames = ["Sharpened Edge", "Steel Press", "Hydraulic Piston", "Nano-Striker", "Plasma Torch", "Laser Drill", "Molecular Disrupter", "Gravity Hammer"];
+
+// Create Income Buildings
+buildingNames.forEach((name, i) => {
+    state.upgrades.push({
+        id: `b-${i}`,
+        name: name,
+        baseCost: 15 * Math.pow(4, i),
+        cost: 15 * Math.pow(4, i),
+        power: Math.pow(3, i),
+        count: 0,
+        multiplier: 1.15,
+        type: 'income'
+    });
+});
+
+// Create Click Power Upgrades
+clickUpgradeNames.forEach((name, i) => {
+    state.upgrades.push({
+        id: `c-${i}`,
+        name: name,
+        baseCost: 50 * Math.pow(5, i),
+        cost: 50 * Math.pow(5, i),
+        power: Math.pow(2, i + 1),
+        count: 0,
+        multiplier: 2.5,
+        type: 'click'
+    });
+});
+
+// 2. CORE FUNCTIONS
+function manualClick() {
+    state.credits += state.clickValue;
+    updateUI();
+}
+
+function toggleTurbo() {
+    const cost = 500;
+    if (!state.isTurboOn && state.credits >= cost) {
+        state.credits -= cost;
+        state.isTurboOn = true;
+        const btn = document.getElementById('turbo-btn');
+        btn.innerText = "TURBO ACTIVE (4 CPS)";
+        btn.style.background = "var(--crimson-bright)";
+        setInterval(manualClick, 250); // 4 times per second
+    }
+}
+
+function buyUpgrade(id) {
+    const u = state.upgrades.find(item => item.id === id);
+    if (state.credits >= u.cost) {
+        state.credits -= u.cost;
+        u.count++;
+        if (u.type === 'click') {
+            state.clickValue += u.power;
+        }
+        // Scientific scaling: Price = Base * (Multiplier ^ Count)
+        u.cost = u.baseCost * Math.pow(u.multiplier, u.count);
+        updateUI();
+        saveGame();
+    }
+}
+
+// 3. UI ENGINE
+function initUI() {
+    const container = document.getElementById('upgrades-list');
+    let html = `
+        <button id="turbo-btn" onclick="toggleTurbo()" 
+                style="width:100%; margin-bottom:15px; padding:12px; background:#444; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">
+            UNLOCK TURBO 4-CPS (Cost: $500)
+        </button>
+        <h2 style="color:var(--crimson-bright); font-size:1.1rem; margin-bottom:10px; border-bottom:1px solid #444;">MARKET</h2>
+    `;
+
+    html += state.upgrades.map(u => `
+        <div class="upgrade-card">
+            <div class="info">
+                <h3 id="name-${u.id}">${u.name} (x${u.count})</h3>
+                <p>${u.type === 'income' ? '+$'+u.power+'/s' : '+$'+u.power+'/click'} | Cost: $<span id="cost-${u.id}">${Math.floor(u.cost).toLocaleString()}</span></p>
+            </div>
+            <button class="buy-btn" id="btn-${u.id}" onclick="buyUpgrade('${u.id}')">Buy</button>
+        </div>
+    `).join('');
+    container.innerHTML = html;
+}
+
+function updateUI() {
+    document.getElementById('credits').innerText = Math.floor(state.credits).toLocaleString();
+    
+    const totalPPS = state.upgrades
+        .filter(u => u.type === 'income')
+        .reduce((sum, u) => sum + (u.count * u.power), 0);
+    
+    document.getElementById('pps').innerText = totalPPS.toLocaleString();
+    document.getElementById('main-click-btn').innerText = `MANUFACTURE (+$${state.clickValue})`;
+
+    state.upgrades.forEach(u => {
+        const btn = document.getElementById(`btn-${u.id}`);
+        if(btn) {
+            btn.disabled = state.credits < u.cost;
+            document.getElementById(`cost-${u.id}`).innerText = Math.floor(u.cost).toLocaleString();
+            document.getElementById(`name-${u.id}`).innerText = `${u.name} (x${u.count})`;
+        }
+    });
+}
+
+// 4. PERSISTENCE
+function saveGame() {
+    const data = {
+        credits: state.credits,
+        clickValue: state.clickValue,
+        isTurboOn: state.isTurboOn,
+        upgrades: state.upgrades.map(u => ({ id: u.id, count: u.count }))
+    };
+    localStorage.setItem('crimsonTycoonSave', JSON.stringify(data));
+}
+
+function loadGame() {
+    const saved = localStorage.getItem('crimsonTycoonSave');
+    if (saved) {
+        const parsed = JSON.parse(saved);
+        state.credits = parsed.credits;
+        state.clickValue = parsed.clickValue || 1;
+        state.isTurboOn = parsed.isTurboOn || false;
+        
+        state.upgrades.forEach(u => {
+            const savedU = parsed.upgrades.find(su => su.id === u.id);
+            if (savedU) {
+                u.count = savedU.count;
+                u.cost = u.baseCost * Math.pow(u.multiplier, u.count);
+            }
+        });
+        
+        if (state.isTurboOn) {
+            // Re-trigger interval if they had it unlocked
+            setInterval(manualClick, 250);
+        }
+    }
+}
+
+// 5. START
+loadGame();
+initUI();
+let lastTick = performance.now();
+function loop(now) {
+    const dt = (now - lastTick) / 1000;
+    lastTick = now;
+    const income = state.upgrades.filter(u => u.type === 'income').reduce((sum, u) => sum + (u.count * u.power), 0);
+    state.credits += income * dt;
+    updateUI();
+    requestAnimationFrame(loop);
+}
+setInterval(saveGame, 5000);
+requestAnimationFrame(loop);
+</script>
+<footer>
+    Simulator Game! Not real money!
+</footer>
+</body>
+</html>
