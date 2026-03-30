@@ -413,8 +413,7 @@
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.shadowMap.enabled = false;
         document.body.appendChild(renderer.domElement);
 
         const hemi = new THREE.HemisphereLight(0xdaf2ff, 0x315d2f, 1.1);
@@ -422,16 +421,31 @@
 
         const sunLight = new THREE.DirectionalLight(0xffffff, 1.15);
         sunLight.position.set(240, 320, 180);
-        sunLight.castShadow = true;
-        sunLight.shadow.mapSize.set(2048, 2048);
-        sunLight.shadow.camera.left = -400;
-        sunLight.shadow.camera.right = 400;
-        sunLight.shadow.camera.top = 400;
-        sunLight.shadow.camera.bottom = -400;
         scene.add(sunLight);
 
         const ambient = new THREE.AmbientLight(0xffffff, 0.28);
         scene.add(ambient);
+
+        const decorSun = new THREE.Mesh(
+            new THREE.SphereGeometry(38, 20, 20),
+            new THREE.MeshBasicMaterial({ color: 0xffefb0, transparent: true, opacity: 0.38 })
+        );
+        decorSun.position.set(560, 340, -900);
+        scene.add(decorSun);
+
+        const decorClouds = [];
+        function createDecorCloud(x, y, z, scale = 1) {
+            const cloud = new THREE.Group();
+            const material = new THREE.MeshStandardMaterial({ color: 0xf9fdff, transparent: true, opacity: 0.9 });
+            [[0, 0, 0, 16], [12, 2, -4, 13], [-12, 1, 5, 11], [8, -1, 8, 10]].forEach(([dx, dy, dz, size]) => {
+                const puff = new THREE.Mesh(new THREE.SphereGeometry(size * scale, 12, 12), material);
+                puff.position.set(dx * scale, dy * scale, dz * scale);
+                cloud.add(puff);
+            });
+            cloud.position.set(x, y, z);
+            decorClouds.push({ object: cloud, speed: 0.08 + Math.random() * 0.05 });
+            scene.add(cloud);
+        }
 
         const world = new THREE.Group();
         scene.add(world);
@@ -441,6 +455,7 @@
         const stars = [];
         const trees = [];
         const oreNodes = [];
+        const digColumns = [];
         const villagers = [];
         const talkables = [];
         const animatedPickups = [];
@@ -522,12 +537,33 @@
         world.add(villageSquare);
 
         const marketRing = new THREE.Mesh(
-            new THREE.TorusGeometry(125, 7, 12, 60),
-            new THREE.MeshStandardMaterial({ color: 0x997b54, roughness: 0.9 })
+            new THREE.RingGeometry(118, 132, 48),
+            new THREE.MeshStandardMaterial({ color: 0x9d8258, roughness: 0.95, side: THREE.DoubleSide })
         );
-        marketRing.rotation.x = Math.PI / 2;
-        marketRing.position.set(0, 0.12, 0);
+        marketRing.rotation.x = -Math.PI / 2;
+        marketRing.position.set(0, 0.05, 0);
         world.add(marketRing);
+
+        function createGroundPatch(x, z, radius, color, opacity = 1) {
+            const patch = new THREE.Mesh(
+                new THREE.CircleGeometry(radius, 24),
+                new THREE.MeshStandardMaterial({ color, transparent: opacity < 1, opacity, roughness: 1 })
+            );
+            patch.rotation.x = -Math.PI / 2;
+            patch.position.set(x, 0.03, z);
+            world.add(patch);
+        }
+
+        [
+            [-260, -210, 140, 0x78c86c],
+            [260, -240, 110, 0x80cc74],
+            [300, 260, 150, 0x8dbe70],
+            [-360, 290, 170, 0x71b765],
+            [620, -20, 140, 0xd4ca97],
+            [-620, -120, 160, 0x8a8f99],
+            [-560, -280, 90, 0x7b836f],
+            [540, 420, 120, 0x7ebd6d]
+        ].forEach(([x, z, radius, color]) => createGroundPatch(x, z, radius, color, 0.95));
 
         function addObstacle(mesh) {
             mesh.castShadow = true;
@@ -684,6 +720,24 @@
             oreNodes.push({ mesh: rock, health: 3 });
         }
 
+        function createDigColumn(x, z, depth = 4) {
+            const column = [];
+            for (let i = 0; i < depth; i++) {
+                const block = new THREE.Mesh(
+                    new THREE.BoxGeometry(5, 2.4, 5),
+                    new THREE.MeshStandardMaterial({ color: 0x6a6455, roughness: 1 })
+                );
+                block.position.set(x, 1.2 - i * 2.35, z);
+                block.visible = i === 0;
+                block.castShadow = true;
+                block.receiveShadow = true;
+                world.add(block);
+                if (i === 0) obstacles.push(block);
+                column.push(block);
+            }
+            digColumns.push({ blocks: column, depthIndex: 0 });
+        }
+
         function createStar(x, z) {
             const star = new THREE.Mesh(
                 new THREE.IcosahedronGeometry(0.82, 0),
@@ -788,22 +842,8 @@
         }
 
         function buildMine() {
-            const mineGround = new THREE.Mesh(
-                new THREE.CircleGeometry(130, 30),
-                new THREE.MeshStandardMaterial({ color: 0x71634d, roughness: 1 })
-            );
-            mineGround.rotation.x = -Math.PI / 2;
-            mineGround.position.set(-620, 0.06, -120);
-            world.add(mineGround);
-
-            const mountain = new THREE.Mesh(
-                new THREE.ConeGeometry(120, 120, 6),
-                new THREE.MeshStandardMaterial({ color: 0x72706e, roughness: 1 })
-            );
-            mountain.position.set(-620, 60, -140);
-            mountain.castShadow = true;
-            mountain.receiveShadow = true;
-            world.add(mountain);
+            createGroundPatch(-620, -120, 145, 0x7e8690, 0.96);
+            createGroundPatch(-620, -120, 88, 0x5e6458, 0.98);
 
             const mineEntranceTop = new THREE.Mesh(
                 new THREE.BoxGeometry(22, 12, 2.4),
@@ -828,11 +868,19 @@
             );
             tunnel.position.set(-620, 7, -52);
             addObstacle(tunnel);
+
+            [
+                [-665, -108], [-648, -138], [-620, -118], [-592, -140], [-576, -108],
+                [-648, -78], [-620, -82], [-592, -76]
+            ].forEach(([x, z]) => createDigColumn(x, z, 5));
         }
 
         buildVillage();
         buildMine();
         scatterNature();
+        for (let i = 0; i < 8; i++) {
+            createDecorCloud(-760 + i * 180, 180 + Math.random() * 70, -360 + Math.random() * 760, 0.9 + Math.random() * 0.5);
+        }
 
         const wizard = createVillager("Wizard", 0x5c39c4, 4, -118, "Quest giver");
         const lumberjack = createVillager("Lumberjack", 0xdb6d48, 176, 16, "Wood quest");
@@ -877,6 +925,24 @@
             floor: 12,
             door: 15
         };
+        let selectedBuildType = "wall";
+        const buildPreview = new THREE.Mesh(
+            new THREE.BoxGeometry(1, 1, 1),
+            new THREE.MeshStandardMaterial({ color: 0x66fff2, transparent: true, opacity: 0.28 })
+        );
+        buildPreview.visible = false;
+        world.add(buildPreview);
+
+        function setBuildPreviewGeometry(type) {
+            if (buildPreview.geometry) buildPreview.geometry.dispose();
+            if (type === "wall") buildPreview.geometry = new THREE.BoxGeometry(5, 3, 0.7);
+            if (type === "lamp") buildPreview.geometry = new THREE.CylinderGeometry(0.18, 0.18, 5, 10);
+            if (type === "chest") buildPreview.geometry = new THREE.BoxGeometry(2.5, 1.6, 1.6);
+            if (type === "roof") buildPreview.geometry = new THREE.ConeGeometry(3.4, 2.6, 4);
+            if (type === "floor") buildPreview.geometry = new THREE.BoxGeometry(4, 0.25, 4);
+            if (type === "door") buildPreview.geometry = new THREE.BoxGeometry(1.6, 3.2, 0.4);
+        }
+        setBuildPreviewGeometry(selectedBuildType);
 
         function getItemCount(itemName) {
             return inventory.reduce((sum, item) => sum + (item.name === itemName ? item.count : 0), 0);
@@ -973,6 +1039,7 @@
         function setBuildMenuState(next) {
             isBuildMenuOpen = next;
             buildMenu.classList.toggle("active", next);
+            buildPreview.visible = next;
             if (next) {
                 document.exitPointerLock?.();
                 document.body.style.cursor = "auto";
@@ -1021,7 +1088,15 @@
         }
 
         [...document.querySelectorAll(".build-item")].forEach((item) => {
-            item.addEventListener("click", () => placeBuild(item.dataset.building));
+            item.addEventListener("mouseenter", () => {
+                selectedBuildType = item.dataset.building;
+                setBuildPreviewGeometry(selectedBuildType);
+            });
+            item.addEventListener("click", () => {
+                selectedBuildType = item.dataset.building;
+                setBuildPreviewGeometry(selectedBuildType);
+                placeBuild(item.dataset.building);
+            });
         });
 
         document.getElementById("closeBuildMenuBtn").addEventListener("click", () => setBuildMenuState(false));
@@ -1163,6 +1238,27 @@
             }
 
             if (selectedName === "Pickaxe") {
+                const digHits = raycaster.intersectObjects(digColumns.flatMap((column) => column.blocks.filter((block) => block.visible)))[0];
+                if (digHits) {
+                    const column = digColumns.find((entry) => entry.blocks.includes(digHits.object));
+                    const currentBlock = column.blocks[column.depthIndex];
+                    world.remove(currentBlock);
+                    const obstacleIndex = obstacles.indexOf(currentBlock);
+                    if (obstacleIndex !== -1) obstacles.splice(obstacleIndex, 1);
+                    column.depthIndex += 1;
+                    if (column.depthIndex < column.blocks.length) {
+                        const nextBlock = column.blocks[column.depthIndex];
+                        nextBlock.visible = true;
+                        obstacles.push(nextBlock);
+                        playerGroup.position.y = Math.max(playerGroup.position.y - 2.2, -column.depthIndex * 2.1 + 1);
+                    }
+                    addItemToInventory("🪨", "Ore", 1);
+                    questState.oreCollected += 1;
+                    updateStatus("You break deeper into the quarry.");
+                    updateInventoryUI();
+                    return;
+                }
+
                 const oreHits = raycaster.intersectObjects(oreNodes.map((node) => node.mesh))[0];
                 if (oreHits) {
                     const node = oreNodes.find((entry) => entry.mesh === oreHits.object);
@@ -1272,6 +1368,17 @@
             });
         }
 
+        function getGroundLevelAt(x, z) {
+            let groundLevel = 1;
+            digColumns.forEach((column) => {
+                const visibleIndex = Math.min(column.depthIndex, column.blocks.length - 1);
+                const block = column.blocks[visibleIndex];
+                const dist = Math.hypot(block.position.x - x, block.position.z - z);
+                if (dist < 4.5) groundLevel = Math.min(groundLevel, block.position.y + 1.2);
+            });
+            return groundLevel;
+        }
+
         function collectNearbyStars() {
             for (let i = stars.length - 1; i >= 0; i--) {
                 const star = stars[i];
@@ -1301,14 +1408,15 @@
                 if (keys["a"] || keys["arrowleft"]) velocity.add(right.clone().multiplyScalar(-moveSpeed));
                 if (keys["d"] || keys["arrowright"]) velocity.add(right.clone().multiplyScalar(moveSpeed));
 
-                const onGround = playerGroup.position.y <= 1.001;
+                const groundLevel = getGroundLevelAt(playerGroup.position.x, playerGroup.position.z);
+                const onGround = playerGroup.position.y <= groundLevel + 0.001;
                 if (keys[" "] && onGround) velocity.y = 0.19;
 
                 velocity.y -= 0.0085;
                 playerGroup.position.add(velocity);
 
-                if (playerGroup.position.y < 1) {
-                    playerGroup.position.y = 1;
+                if (playerGroup.position.y < groundLevel) {
+                    playerGroup.position.y = groundLevel;
                     velocity.y = 0;
                 }
 
@@ -1332,6 +1440,22 @@
                 item.rotation.y += 0.02;
                 item.position.y = item.userData.baseY + Math.sin(time * 2 + index) * 0.18;
             });
+
+            decorClouds.forEach((cloud, index) => {
+                cloud.object.position.x += cloud.speed;
+                cloud.object.position.z += Math.sin(time * 0.6 + index) * 0.05;
+                if (cloud.object.position.x > 920) cloud.object.position.x = -920;
+            });
+
+            if (isBuildMenuOpen) {
+                const previewForward = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw)).multiplyScalar(-8);
+                buildPreview.visible = true;
+                buildPreview.position.copy(playerGroup.position).add(previewForward);
+                buildPreview.position.y = selectedBuildType === "roof" ? 2.4 : selectedBuildType === "lamp" ? 2.5 : selectedBuildType === "floor" ? 0.2 : 1.5;
+                buildPreview.rotation.y = yaw;
+            } else {
+                buildPreview.visible = false;
+            }
 
             const cameraDistance = 7.2;
             const cameraHeight = 2.9;
