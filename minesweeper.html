@@ -13,13 +13,30 @@
             margin: 0; background: var(--bg); color: var(--text);
             font-family: 'system-ui', sans-serif;
             display: flex; flex-direction: column; align-items: center;
-            min-height: 100vh; padding: 20px; overflow-x: hidden;
+            min-height: 100vh; padding: 10px; overflow-x: hidden;
         }
         .controls {
-            background: var(--card); padding: 15px 25px; border-radius: 16px;
-            display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;
-            margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1);
+            background: var(--card); padding: 12px; border-radius: 16px;
+            display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+            margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.1);
+            width: 100%; max-width: 400px;
         }
+
+        /* Mobile Mode Selector */
+        .mode-selector {
+            display: flex; gap: 8px; margin-bottom: 15px;
+            background: var(--card); padding: 8px; border-radius: 12px;
+        }
+        .mode-btn {
+            padding: 10px 20px; border-radius: 8px; border: 2px solid transparent;
+            background: var(--tile); color: white; cursor: pointer;
+            display: flex; align-items: center; gap: 8px; font-weight: bold;
+            transition: 0.2s;
+        }
+        .mode-btn.active {
+            border-color: var(--accent); background: rgba(56, 189, 248, 0.2);
+        }
+
         #stats-bar {
             display: flex; gap: 40px; font-size: 1.5rem; font-weight: 800;
             margin-bottom: 15px; font-variant-numeric: tabular-nums;
@@ -27,11 +44,16 @@
         .stat-box { color: var(--accent); display: flex; flex-direction: column; align-items: center; }
         .stat-label { font-size: 0.7rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px; }
 
+        .grid-container {
+            max-width: 100%; overflow-x: auto; padding: 10px;
+            -webkit-overflow-scrolling: touch;
+        }
         #grid {
             display: grid; gap: 4px; padding: 10px;
             background: var(--card); border-radius: 12px;
             box-shadow: 0 20px 50px rgba(0,0,0,0.5);
             user-select: none; touch-action: manipulation;
+            margin: 0 auto;
         }
         .tile {
             width: 32px; height: 32px; background: var(--tile);
@@ -56,7 +78,7 @@
 <body>
 
     <div class="controls">
-        <select id="difficulty">
+        <select id="difficulty" onchange="initGame()">
             <option value="easy">Easy</option>
             <option value="medium" selected>Medium</option>
             <option value="hard">Hard</option>
@@ -64,26 +86,44 @@
         <button onclick="initGame()">Restart</button>
     </div>
 
+    <div class="mode-selector">
+        <div id="btn-reveal" class="mode-btn active" onclick="setMode('reveal')">
+            <span>💣</span> Dig
+        </div>
+        <div id="btn-flag" class="mode-btn" onclick="setMode('flag')">
+            <span>🚩</span> Flag
+        </div>
+    </div>
+
     <div id="stats-bar">
         <div class="stat-box"><span id="mine-count">0</span><span class="stat-label">Mines</span></div>
         <div class="stat-box"><span id="timer">000</span><span class="stat-label">Time</span></div>
     </div>
 
-    <div id="grid"></div>
+    <div class="grid-container">
+        <div id="grid"></div>
+    </div>
 
     <script>
         const grid = document.getElementById('grid');
         const mineCountEl = document.getElementById('mine-count');
         const timerEl = document.getElementById('timer');
         const diffSelect = document.getElementById('difficulty');
-
+        
         let rows, cols, mines, board, gameOver, firstClick, timeElapsed, timerInterval;
+        let currentMode = 'reveal'; // 'reveal' or 'flag'
 
         const CONFIG = {
             easy: { r: 9, c: 9, m: 10 },
             medium: { r: 16, c: 16, m: 40 },
             hard: { r: 16, c: 30, m: 99 }
         };
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.getElementById('btn-reveal').classList.toggle('active', mode === 'reveal');
+            document.getElementById('btn-flag').classList.toggle('active', mode === 'flag');
+        }
 
         function initGame() {
             const level = CONFIG[diffSelect.value];
@@ -93,7 +133,7 @@
             timerEl.innerText = "000";
             mineCountEl.innerText = mines;
 
-            grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+            grid.style.gridTemplateColumns = `repeat(${cols}, 32px)`;
             grid.innerHTML = '';
             board = [];
 
@@ -102,8 +142,16 @@
                 for (let c = 0; c < cols; c++) {
                     const el = document.createElement('div');
                     el.classList.add('tile');
-                    el.addEventListener('click', () => handleLeftClick(r, c));
-                    el.addEventListener('contextmenu', (e) => { e.preventDefault(); toggleFlag(r, c); });
+                    // Primary interaction handles both modes
+                    el.addEventListener('click', () => {
+                        if (currentMode === 'reveal') handleLeftClick(r, c);
+                        else toggleFlag(r, c);
+                    });
+                    // Desktop users can still right-click to flag
+                    el.addEventListener('contextmenu', (e) => { 
+                        e.preventDefault(); 
+                        toggleFlag(r, c); 
+                    });
 
                     grid.appendChild(el);
                     board[r][c] = { mine: false, revealed: false, flagged: false, count: 0, el };
@@ -128,7 +176,7 @@
             }
 
             if (board[r][c].revealed) {
-                chord(r, c); // Feature: Chord on already open numbers
+                chord(r, c);
             } else {
                 revealTile(r, c);
             }
@@ -139,7 +187,6 @@
             while (planted < mines) {
                 let r = Math.floor(Math.random() * rows);
                 let c = Math.floor(Math.random() * cols);
-                // Don't plant on first-click tile or its immediate neighbors
                 if (!board[r][c].mine && (Math.abs(r - safeR) > 1 || Math.abs(c - safeC) > 1)) {
                     board[r][c].mine = true;
                     planted++;
@@ -174,15 +221,11 @@
         function chord(r, c) {
             const tile = board[r][c];
             if (tile.count === 0) return;
-
             let neighbors = getNeighbors(r, c);
             let flagCount = neighbors.filter(n => board[n.r][n.c].flagged).length;
-
             if (flagCount === tile.count) {
                 neighbors.forEach(n => {
-                    if (!board[n.r][n.c].revealed && !board[n.r][n.c].flagged) {
-                        revealTile(n.r, n.c);
-                    }
+                    if (!board[n.r][n.c].revealed && !board[n.r][n.c].flagged) revealTile(n.r, n.c);
                 });
             }
         }
@@ -190,22 +233,15 @@
         function revealTile(r, c) {
             const tile = board[r][c];
             if (gameOver || tile.revealed || tile.flagged) return;
-
             tile.revealed = true;
             tile.el.classList.add('revealed');
-
-            if (tile.mine) {
-                endGame(false);
-                return;
-            }
-
+            if (tile.mine) { endGame(false); return; }
             if (tile.count > 0) {
                 tile.el.innerText = tile.count;
                 tile.el.classList.add('n' + tile.count);
             } else {
                 getNeighbors(r, c).forEach(n => revealTile(n.r, n.c));
             }
-
             checkWin();
         }
 
@@ -214,7 +250,6 @@
             board[r][c].flagged = !board[r][c].flagged;
             board[r][c].el.classList.toggle('flagged');
             board[r][c].el.innerText = board[r][c].flagged ? '🚩' : '';
-            
             let currentFlags = 0;
             board.forEach(row => row.forEach(t => { if(t.flagged) currentFlags++; }));
             mineCountEl.innerText = mines - currentFlags;
@@ -235,9 +270,7 @@
                     t.el.innerText = '💣';
                 }
             }));
-            setTimeout(() => {
-                alert(won ? `🏆 Victory! Time: ${timeElapsed}s` : `💀 Game Over!`);
-            }, 100);
+            setTimeout(() => { alert(won ? `🏆 Victory! Time: ${timeElapsed}s` : `💀 Game Over!`); }, 100);
         }
 
         initGame();

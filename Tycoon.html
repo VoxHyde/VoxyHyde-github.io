@@ -3,212 +3,347 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clicker Tycoon</title>
-<style>
-    #game-container {
-    display: flex;
-    flex-direction: column; /* Stack elements vertically */
-    height: 90vh;           /* Give the container a fixed height */
-    max-height: 800px;      /* But don't let it get too huge */
-}
+    <title>Crimson Clicker Ultra</title>
+    <style>
+        :root {
+            --bg-dark: #0f0000;
+            --crimson-main: #800000;
+            --crimson-bright: #ff1a1a;
+            --panel: rgba(25, 5, 5, 0.95);
+            --text: #ffe0e0;
+            --card-bg: rgba(255, 255, 255, 0.05);
+        }
 
-#upgrades-list {
-    flex-grow: 1;           /* THIS IS THE MAGIC: It pushes the footer down */
-    overflow-y: auto;       /* Keeps the list scrollable */
-    margin: 15px 0;
-    padding-right: 10px;
-}
+        /* ANIMATED BACKGROUND */
+        body {
+            margin: 0;
+            padding: 10px;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(45deg, #1a0000, #4d0000, #1a0000, #800000);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text);
+            overflow-x: hidden;
+        }
 
-footer {
-    flex-shrink: 0;         /* Ensures the footer never gets squashed */
-    margin-top: auto;       /* Safety push to the bottom */
-    padding-top: 15px;
-    border-top: 1px solid #330000;
-    font-size: 0.7rem;
-    color: aliceblue;
-    text-align: center;
-}
-    #upgrades-list {
-    max-height: 400px; /* Limits height so it doesn't grow forever */
-    overflow-y: auto;  /* Adds scrollbar */
-    padding-right: 10px;
-    margin-top: 10px;
-}
-/* Optional: Makes the scrollbar look crimson too */
-#upgrades-list::-webkit-scrollbar { width: 6px; }
-#upgrades-list::-webkit-scrollbar-thumb { background: var(--crimson-main); border-radius: 10px; }
-    :root {
-        --bg-dark: #0f0000;
-        --crimson-main: #800000;
-        --crimson-bright: #ff1a1a;
-        --panel: rgba(30, 0, 0, 0.85); /* Semi-transparent to see the bg */
-        --text: #ffe0e0;
-    }
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
 
-    /* THE ANIMATED BACKGROUND */
-    body {
-        margin: 0;
-        padding: 20px;
-        font-family: 'Segoe UI', sans-serif;
-        background: linear-gradient(45deg, #1a0000, #4d0000, #1a0000, #800000);
-        background-size: 400% 400%;
-        animation: gradientBG 15s ease infinite;
-        display: flex;
-        justify-content: center;
-        min-height: 100vh;
-        color: var(--text);
-    }
+        #game-container {
+            width: 100%;
+            max-width: 900px;
+            background: var(--panel);
+            padding: 1.5rem;
+            border-radius: 24px;
+            backdrop-filter: blur(15px);
+            border: 2px solid var(--crimson-main);
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
 
-    @keyframes gradientBG {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-    }
+        /* HEADER & STATS */
+        .header {
+            text-align: center;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
 
-    #game-container {
-        width: 100%;
-        max-width: 500px;
-        background: var(--panel);
-        padding: 2rem;
-        border-radius: 20px;
-        backdrop-filter: blur(10px); /* Blurs the crimson bg behind the panel */
-        border: 1px solid var(--crimson-main);
-        box-shadow: 0 0 30px rgba(128, 0, 0, 0.5);
-    }
+        .money-display {
+            font-size: clamp(2.5rem, 8vw, 4rem);
+            font-weight: 900;
+            color: var(--crimson-bright);
+            text-shadow: 0 0 20px var(--crimson-main);
+            margin: 0;
+        }
 
-    /* SICK ASS CRIMSON BUTTON */
-    #main-click-btn {
-        width: 100%;
-        height: 120px;
-        background: linear-gradient(to bottom, var(--crimson-bright), var(--crimson-main));
-        border: none;
-        border-radius: 12px;
-        color: white;
-        font-size: 1.6rem;
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        cursor: pointer;
-        margin-bottom: 2rem;
-        transition: all 0.1s;
-        box-shadow: 0 0 15px var(--crimson-main), 0 6px 0 #4d0000;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-    }
+        .income-rate {
+            font-size: 1.1rem;
+            opacity: 0.8;
+            color: #ff9999;
+        }
 
-    #main-click-btn:active {
-        transform: translateY(4px);
-        box-shadow: 0 0 5px var(--crimson-main), 0 2px 0 #4d0000;
-    }
+        /* GRID LAYOUT FOR DESKTOP */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
 
-    #main-click-btn:hover {
-        filter: brightness(1.2);
-        box-shadow: 0 0 25px var(--crimson-bright), 0 6px 0 #4d0000;
-    }
+        @media (min-width: 768px) {
+            .main-layout {
+                grid-template-columns: 350px 1fr;
+            }
+        }
 
-    .upgrade-card {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(128, 0, 0, 0.3);
-        padding: 12px 16px;
-        margin-bottom: 10px;
-        border-radius: 8px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
+        /* THE CLICKER AREA */
+        .clicker-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
 
-    .buy-btn {
-        background: var(--crimson-main);
-        border: 1px solid var(--crimson-bright);
-        color: white;
-        padding: 8px 16px;
-        border-radius: 4px;
-        font-weight: bold;
-        cursor: pointer;
-    }
+        #main-click-btn {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            max-width: 280px;
+            background: radial-gradient(circle, var(--crimson-bright) 0%, var(--crimson-main) 100%);
+            border: 8px solid rgba(0,0,0,0.3);
+            border-radius: 50%;
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 900;
+            cursor: pointer;
+            transition: transform 0.05s, box-shadow 0.1s;
+            box-shadow: 0 10px 0 #4d0000, 0 0 30px rgba(255, 26, 26, 0.3);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-transform: uppercase;
+        }
 
-    .buy-btn:disabled {
-        background: #222;
-        border-color: #444;
-        color: #666;
-    }
+        #main-click-btn:active {
+            transform: translateY(8px);
+            box-shadow: 0 2px 0 #4d0000, 0 0 10px rgba(255, 26, 26, 0.5);
+        }
 
-    .money-display {
-        font-size: 3rem;
-        color: var(--crimson-bright);
-        text-shadow: 0 0 10px var(--crimson-main);
-    }
-</style>
+        /* UPGRADES SCROLL AREA */
+        #upgrades-list {
+            height: 500px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .upgrade-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 12px;
+            margin-bottom: 12px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: background 0.3s;
+        }
+
+        .upgrade-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .upgrade-icon {
+            font-size: 2rem;
+            background: rgba(0,0,0,0.3);
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            flex-shrink: 0;
+        }
+
+        .upgrade-info {
+            flex-grow: 1;
+        }
+
+        .upgrade-info h3 {
+            margin: 0;
+            font-size: 1rem;
+            color: #fff;
+        }
+
+        .upgrade-info p {
+            margin: 4px 0 0;
+            font-size: 0.85rem;
+            color: #aaa;
+        }
+
+        .buy-btn {
+            background: var(--crimson-main);
+            border: none;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            min-width: 80px;
+        }
+
+        .buy-btn:disabled {
+            background: #222;
+            color: #555;
+            cursor: not-allowed;
+        }
+
+        /* TURBO CONTROLS */
+        #turbo-container {
+            width: 100%;
+        }
+
+        .turbo-toggle-wrap {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #330000;
+            padding: 10px 20px;
+            border-radius: 12px;
+            border: 1px solid var(--crimson-bright);
+        }
+
+        /* Custom Scrollbar */
+        #upgrades-list::-webkit-scrollbar { width: 6px; }
+        #upgrades-list::-webkit-scrollbar-thumb { background: var(--crimson-main); border-radius: 10px; }
+
+        footer {
+            margin-top: 20px;
+            font-size: 0.8rem;
+            color: rgba(255,224,224,0.5);
+        }
+    </style>
 </head>
 <body>
 
 <div id="game-container">
-    <div class="stats">
-        <div class="money-display">$<span id="credits">10</span></div>
-        <div class="income-rate">+$<span id="pps">0</span> / sec</div>
+    <div class="header">
+        <div class="money-display">$<span id="credits">0</span></div>
+        <div class="income-rate">💰 $<span id="pps">0</span> / SEC</div>
     </div>
 
-    <button id="main-click-btn" onclick="manualClick()">MANUFACTURE (+$1)</button>
-
-    <div id="upgrades-list">
+    <div class="main-layout">
+        <div class="clicker-section">
+            <button id="main-click-btn" onclick="manualClick()">
+                <span style="font-size: 3rem;">⛏️</span>
+                <div id="click-val-text">+$1</div>
+            </button>
+            
+            <div id="turbo-container">
+                </div>
         </div>
+
+        <div id="upgrades-list">
+            </div>
+    </div>
 </div>
 
+<footer>Simulator Game • Not Real Money</footer>
+
 <script>
-    const state = {
+const state = {
     credits: 10,
     clickValue: 1,
-    isTurboOn: false,
+    isTurboUnlocked: false,
+    isTurboActive: false,
+    turboLevel: 0,
+    turboInterval: null,
     upgrades: []
 };
 
-// 1. GENERATE THE DATA
-const buildingNames = ["Blood Scraper", "Crimson Forge", "Soul Extractor", "Void Reactor", "Abyssal Miner", "Dark Matter Lab", "Nebula Siphon", "Galactic Grinder", "Reality Warp", "Entropy Engine", "Event Horizon", "Omega Core"];
-const clickUpgradeNames = ["Sharpened Edge", "Steel Press", "Hydraulic Piston", "Nano-Striker", "Plasma Torch", "Laser Drill", "Molecular Disrupter", "Gravity Hammer"];
+const BUILDINGS = [
+    { name: "Rusty Sieve", icon: "🗑️", baseCost: 15, power: 1, multiplier: 1.15, type: 'income' },
+    { name: "Blood Scraper", icon: "🔪", baseCost: 100, power: 5, multiplier: 1.15, type: 'income' },
+    { name: "Crimson Forge", icon: "🔥", baseCost: 500, power: 15, multiplier: 1.16, type: 'income' },
+    { name: "Soul Extractor", icon: "⚱️", baseCost: 2500, power: 50, multiplier: 1.17, type: 'income' },
+    { name: "Void Reactor", icon: "⚛️", baseCost: 12000, power: 150, multiplier: 1.18, type: 'income' },
+    { name: "Abyssal Miner", icon: "🌋", baseCost: 50000, power: 450, multiplier: 1.19, type: 'income' },
+    { name: "Nebula Siphon", icon: "🌪️", baseCost: 250000, power: 1200, multiplier: 1.20, type: 'income' },
+    { name: "Reality Warp", icon: "🌀", baseCost: 1000000, power: 5000, multiplier: 1.22, type: 'income' },
+    { name: "Entropy Engine", icon: "⚙️", baseCost: 5000000, power: 18000, multiplier: 1.23, type: 'income' },
+    { name: "Event Horizon", icon: "🕳️", baseCost: 25000000, power: 65000, multiplier: 1.24, type: 'income' },
+    { name: "Omega Core", icon: "🔮", baseCost: 150000000, power: 200000, multiplier: 1.25, type: 'income' },
+    { name: "Star Crusher", icon: "🌟", baseCost: 1000000000, power: 900000, multiplier: 1.26, type: 'income' },
+    { name: "Galactic Grinder", icon: "🌌", baseCost: 7500000000, power: 4000000, multiplier: 1.27, type: 'income' },
+    { name: "Time Dilator", icon: "⏳", baseCost: 50000000000, power: 15000000, multiplier: 1.28, type: 'income' },
+    { name: "Dimension Splitter", icon: "⛩️", baseCost: 300000000000, power: 60000000, multiplier: 1.29, type: 'income' },
+    { name: "Ancient Relic", icon: "🔱", baseCost: 2000000000000, power: 250000000, multiplier: 1.30, type: 'income' },
+    { name: "Cosmic Loom", icon: "🧶", baseCost: 15000000000000, power: 1000000000, multiplier: 1.31, type: 'income' },
+    { name: "The Singularity", icon: "👁️", baseCost: 100000000000000, power: 5000000000, multiplier: 1.32, type: 'income' }
+];
 
-// Create Income Buildings
-buildingNames.forEach((name, i) => {
-    state.upgrades.push({
-        id: `b-${i}`,
-        name: name,
-        baseCost: 15 * Math.pow(4, i),
-        cost: 15 * Math.pow(4, i),
-        power: Math.pow(3, i),
-        count: 0,
-        multiplier: 1.15,
-        type: 'income'
+const TOOLS = [
+    { name: "Steel Press", icon: "🦾", baseCost: 50, power: 2, multiplier: 1.8, type: 'click' },
+    { name: "Hydraulic Piston", icon: "🏗️", baseCost: 500, power: 10, multiplier: 1.9, type: 'click' },
+    { name: "Plasma Torch", icon: "🔦", baseCost: 5000, power: 50, multiplier: 2.0, type: 'click' },
+    { name: "Laser Drill", icon: "💎", baseCost: 50000, power: 250, multiplier: 2.1, type: 'click' },
+    { name: "Molecular Disrupter", icon: "🧪", baseCost: 250000, power: 1200, multiplier: 2.2, type: 'click' },
+    { name: "Gravity Hammer", icon: "🔨", baseCost: 1500000, power: 6000, multiplier: 2.3, type: 'click' },
+    { name: "Neutron Pulverizer", icon: "☄️", baseCost: 10000000, power: 35000, multiplier: 2.4, type: 'click' },
+    { name: "Antimatter Bit", icon: "🌑", baseCost: 75000000, power: 150000, multiplier: 2.5, type: 'click' },
+    { name: "Quantum Splitter", icon: "🧲", baseCost: 500000000, power: 800000, multiplier: 2.6, type: 'click' },
+    { name: "Nanobot Swarm", icon: "🐝", baseCost: 4000000000, power: 4500000, multiplier: 2.7, type: 'click' },
+    { name: "Warp Saw", icon: "🪚", baseCost: 30000000000, power: 20000000, multiplier: 2.8, type: 'click' },
+    { name: "Sun Eater", icon: "☀️", baseCost: 250000000000, power: 100000000, multiplier: 2.9, type: 'click' },
+    { name: "God-Finger", icon: "☝️", baseCost: 2000000000000, power: 600000000, multiplier: 3.0, type: 'click' },
+    { name: "Final Click", icon: "💀", baseCost: 15000000000000, power: 3000000000, multiplier: 3.1, type: 'click' }
+];
+
+// Formatting
+function formatNumber(num) {
+    if (num >= 1e12) return (num / 1e12).toFixed(2) + "T";
+    if (num >= 1e9) return (num / 1e9).toFixed(2) + "B";
+    if (num >= 1e6) return (num / 1e6).toFixed(2) + "M";
+    return Math.floor(num).toLocaleString();
+}
+
+// Logic
+function initData() {
+    state.upgrades = [];
+    [...BUILDINGS, ...TOOLS].forEach((item, i) => {
+        state.upgrades.push({
+            id: item.type[0] + i,
+            ...item,
+            count: 0,
+            cost: item.baseCost
+        });
     });
-});
+}
 
-// Create Click Power Upgrades
-clickUpgradeNames.forEach((name, i) => {
-    state.upgrades.push({
-        id: `c-${i}`,
-        name: name,
-        baseCost: 50 * Math.pow(5, i),
-        cost: 50 * Math.pow(5, i),
-        power: Math.pow(2, i + 1),
-        count: 0,
-        multiplier: 2.5,
-        type: 'click'
-    });
-});
-
-// 2. CORE FUNCTIONS
 function manualClick() {
     state.credits += state.clickValue;
     updateUI();
 }
 
-function toggleTurbo() {
-    const cost = 500;
-    if (!state.isTurboOn && state.credits >= cost) {
-        state.credits -= cost;
-        state.isTurboOn = true;
-        const btn = document.getElementById('turbo-btn');
-        btn.innerText = "TURBO ACTIVE (4 CPS)";
-        btn.style.background = "var(--crimson-bright)";
-        setInterval(manualClick, 250); // 4 times per second
+function buyTurbo() {
+    const costs = [500, 250000, 62500000000];
+    const currentCost = costs[state.turboLevel];
+
+    if (state.credits >= currentCost && state.turboLevel < 3) {
+        state.credits -= currentCost;
+        state.turboLevel++;
+        state.isTurboUnlocked = true;
+        state.isTurboActive = true;
+        startTurboInterval();
+        updateUI();
+        saveGame();
     }
+}
+
+function toggleTurbo() {
+    state.isTurboActive = !state.isTurboActive;
+    if (state.isTurboActive) startTurboInterval();
+    else {
+        clearInterval(state.turboInterval);
+        state.turboInterval = null;
+    }
+    updateUI();
+    saveGame();
+}
+
+function startTurboInterval() {
+    if (state.turboInterval) clearInterval(state.turboInterval);
+    state.turboInterval = setInterval(() => {
+        state.credits += state.clickValue;
+        updateUI();
+    }, 1000);
 }
 
 function buyUpgrade(id) {
@@ -216,96 +351,109 @@ function buyUpgrade(id) {
     if (state.credits >= u.cost) {
         state.credits -= u.cost;
         u.count++;
-        if (u.type === 'click') {
-            state.clickValue += u.power;
-        }
-        // Scientific scaling: Price = Base * (Multiplier ^ Count)
+        if (u.type === 'click') state.clickValue += u.power;
         u.cost = u.baseCost * Math.pow(u.multiplier, u.count);
         updateUI();
         saveGame();
     }
 }
 
-// 3. UI ENGINE
-function initUI() {
-    const container = document.getElementById('upgrades-list');
-    let html = `
-        <button id="turbo-btn" onclick="toggleTurbo()" 
-                style="width:100%; margin-bottom:15px; padding:12px; background:#444; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">
-            UNLOCK TURBO 4-CPS (Cost: $500)
-        </button>
-        <h2 style="color:var(--crimson-bright); font-size:1.1rem; margin-bottom:10px; border-bottom:1px solid #444;">MARKET</h2>
-    `;
-
-    html += state.upgrades.map(u => `
-        <div class="upgrade-card">
-            <div class="info">
-                <h3 id="name-${u.id}">${u.name} (x${u.count})</h3>
-                <p>${u.type === 'income' ? '+$'+u.power+'/s' : '+$'+u.power+'/click'} | Cost: $<span id="cost-${u.id}">${Math.floor(u.cost).toLocaleString()}</span></p>
-            </div>
-            <button class="buy-btn" id="btn-${u.id}" onclick="buyUpgrade('${u.id}')">Buy</button>
-        </div>
-    `).join('');
-    container.innerHTML = html;
-}
-
 function updateUI() {
-    document.getElementById('credits').innerText = Math.floor(state.credits).toLocaleString();
+    document.getElementById('credits').innerText = formatNumber(state.credits);
     
     const totalPPS = state.upgrades
         .filter(u => u.type === 'income')
         .reduce((sum, u) => sum + (u.count * u.power), 0);
     
-    document.getElementById('pps').innerText = totalPPS.toLocaleString();
-    document.getElementById('main-click-btn').innerText = `MANUFACTURE (+$${state.clickValue})`;
+    document.getElementById('pps').innerText = formatNumber(totalPPS);
+    document.getElementById('click-val-text').innerText = `+$${formatNumber(state.clickValue)}`;
 
+    // Turbo UI logic
+    const turboCont = document.getElementById('turbo-container');
+    const costs = [500, 250000, 62500000000];
+    let html = "";
+
+    if (state.turboLevel < 3) {
+        const cost = costs[state.turboLevel];
+        html += `<button onclick="buyTurbo()" class="buy-btn" style="width:100%; margin-bottom:10px;" ${state.credits < cost ? 'disabled' : ''}>
+                    🚀 ${state.turboLevel === 0 ? 'UNLOCK' : 'UPGRADE'} AUTO-CLICK ($${formatNumber(cost)})
+                 </button>`;
+    } else {
+        html += `<div style="text-align:center; color:gold; margin-bottom:10px; font-weight:bold;">⭐ MAX AUTO-CLICK</div>`;
+    }
+
+    if (state.isTurboUnlocked) {
+        html += `<div class="turbo-toggle-wrap">
+                    <span>AUTO-CLICK (LVL ${state.turboLevel})</span>
+                    <button onclick="toggleTurbo()" class="buy-btn" style="background:${state.isTurboActive ? '#2ecc71' : '#555'}">
+                        ${state.isTurboActive ? 'ON' : 'OFF'}
+                    </button>
+                 </div>`;
+    }
+    turboCont.innerHTML = html;
+
+    // Upgrades UI
     state.upgrades.forEach(u => {
         const btn = document.getElementById(`btn-${u.id}`);
         if(btn) {
             btn.disabled = state.credits < u.cost;
-            document.getElementById(`cost-${u.id}`).innerText = Math.floor(u.cost).toLocaleString();
-            document.getElementById(`name-${u.id}`).innerText = `${u.name} (x${u.count})`;
+            document.getElementById(`cost-${u.id}`).innerText = formatNumber(u.cost);
+            document.getElementById(`count-${u.id}`).innerText = u.count;
         }
     });
 }
 
-// 4. PERSISTENCE
+function initUI() {
+    const list = document.getElementById('upgrades-list');
+    list.innerHTML = state.upgrades.map(u => `
+        <div class="upgrade-card">
+            <div class="upgrade-icon">${u.icon}</div>
+            <div class="upgrade-info">
+                <h3>${u.name} (<span id="count-${u.id}">0</span>)</h3>
+                <p>${u.type === 'income' ? '+$'+formatNumber(u.power)+'/s' : '+$'+formatNumber(u.power)+'/click'} • Cost: $<span id="cost-${u.id}">${formatNumber(u.cost)}</span></p>
+            </div>
+            <button class="buy-btn" id="btn-${u.id}" onclick="buyUpgrade('${u.id}')">BUY</button>
+        </div>
+    `).join('');
+    updateUI();
+}
+
 function saveGame() {
     const data = {
         credits: state.credits,
         clickValue: state.clickValue,
-        isTurboOn: state.isTurboOn,
+        isTurboUnlocked: state.isTurboUnlocked,
+        isTurboActive: state.isTurboActive,
+        turboLevel: state.turboLevel,
         upgrades: state.upgrades.map(u => ({ id: u.id, count: u.count }))
     };
-    localStorage.setItem('crimsonTycoonSave', JSON.stringify(data));
+    localStorage.setItem('crimson_clicker_final_v1', JSON.stringify(data));
 }
 
 function loadGame() {
-    const saved = localStorage.getItem('crimsonTycoonSave');
-    if (saved) {
+    const saved = localStorage.getItem('crimson_clicker_final_v1');
+    if (!saved) return;
+    try {
         const parsed = JSON.parse(saved);
-        state.credits = parsed.credits;
+        state.credits = parsed.credits || 0;
         state.clickValue = parsed.clickValue || 1;
-        state.isTurboOn = parsed.isTurboOn || false;
-        
+        state.isTurboUnlocked = parsed.isTurboUnlocked || false;
+        state.isTurboActive = parsed.isTurboActive || false;
+        state.turboLevel = parsed.turboLevel || 0;
+
         state.upgrades.forEach(u => {
-            const savedU = parsed.upgrades.find(su => su.id === u.id);
+            const savedU = (parsed.upgrades || []).find(su => su.id === u.id);
             if (savedU) {
                 u.count = savedU.count;
                 u.cost = u.baseCost * Math.pow(u.multiplier, u.count);
             }
         });
-        
-        if (state.isTurboOn) {
-            // Re-trigger interval if they had it unlocked
-            setInterval(manualClick, 250);
-        }
-    }
+
+        if (state.isTurboUnlocked && state.isTurboActive) startTurboInterval();
+    } catch (e) { console.error("Load failed, data cleared."); localStorage.clear(); }
 }
 
-// 5. START
-loadGame();
-initUI();
+// Tick Engine
 let lastTick = performance.now();
 function loop(now) {
     const dt = (now - lastTick) / 1000;
@@ -315,11 +463,13 @@ function loop(now) {
     updateUI();
     requestAnimationFrame(loop);
 }
+
+// Initial Run
+initData();
+loadGame();
+initUI();
 setInterval(saveGame, 5000);
 requestAnimationFrame(loop);
 </script>
-<footer>
-    Simulator Game! Not real money!
-</footer>
 </body>
 </html>

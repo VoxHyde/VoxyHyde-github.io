@@ -25,16 +25,41 @@ const player = {
 let obstacles = [];
 let obstacleCounter = 0;
 
-// Keyboard input
+// --- INPUT HANDLING ---
+
 const keys = {};
-window.addEventListener('keydown', (e) => {
-    keys[e.key] = true;
-});
-window.addEventListener('keyup', (e) => {
-    keys[e.key] = false;
+let isTouching = false;
+let touchX = 0;
+
+// Keyboard input
+window.addEventListener('keydown', (e) => { keys[e.key] = true; });
+window.addEventListener('keyup', (e) => { keys[e.key] = false; });
+
+// Touch input (Mobile)
+canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault(); // Prevents scrolling while playing
+    isTouching = true;
+    updateTouchPos(e);
+}, { passive: false });
+
+canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    updateTouchPos(e);
+}, { passive: false });
+
+canvas.addEventListener('touchend', () => {
+    isTouching = false;
 });
 
-// Draw player
+function updateTouchPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches[0];
+    // Calculate touch position relative to canvas scale
+    touchX = (touch.clientX - rect.left) * (canvas.width / rect.width);
+}
+
+// --- GAME LOGIC ---
+
 function drawPlayer() {
     ctx.fillStyle = '#32CD32';
     ctx.beginPath();
@@ -42,8 +67,7 @@ function drawPlayer() {
     ctx.fill();
 }
 
-// Draw slope
-function drawSlope(offset) {
+function drawSlope() {
     ctx.fillStyle = '#444';
     ctx.beginPath();
     ctx.moveTo(0, canvas.height);
@@ -53,7 +77,6 @@ function drawSlope(offset) {
     ctx.fill();
 }
 
-// Draw obstacles
 function drawObstacles() {
     obstacles.forEach(obs => {
         ctx.fillStyle = '#FF6B6B';
@@ -61,35 +84,27 @@ function drawObstacles() {
     });
 }
 
-// Generate obstacles
 function generateObstacles() {
     obstacleCounter++;
     if (obstacleCounter > 30) {
         const width = Math.random() * 60 + 40;
         const height = 15;
         const x = Math.random() * (canvas.width - width);
-        obstacles.push({
-            x: x,
-            y: -height,
-            width: width,
-            height: height
-        });
+        obstacles.push({ x, y: -height, width, height });
         obstacleCounter = 0;
     }
 }
 
-// Update obstacles
 function updateObstacles() {
-    obstacles.forEach((obs, index) => {
-        obs.y += 4;
-        if (obs.y > canvas.height) {
-            obstacles.splice(index, 1);
+    for (let i = obstacles.length - 1; i >= 0; i--) {
+        obstacles[i].y += 4;
+        if (obstacles[i].y > canvas.height) {
+            obstacles.splice(i, 1);
             score += 10;
         }
-    });
+    }
 }
 
-// Collision detection
 function checkCollision() {
     obstacles.forEach(obs => {
         if (player.x + player.radius > obs.x &&
@@ -100,60 +115,65 @@ function checkCollision() {
         }
     });
 
-    // Check if player falls off slope
     const slopeY = canvas.height - player.x * SLOPE_ANGLE;
     if (player.y + player.radius > slopeY + 20) {
         endGame();
     }
 }
 
-// Update player
 function updatePlayer() {
-    // Control movement
+    // 1. Keyboard Controls
     if (keys['ArrowLeft'] || keys['a']) {
         player.velocityX = -player.speed;
     } else if (keys['ArrowRight'] || keys['d']) {
         player.velocityX = player.speed;
-    } else {
-        player.velocityX *= 0.9; // Friction
+    } 
+    // 2. Touch/Finger Controls (Follow finger)
+    else if (isTouching) {
+        const diff = touchX - player.x;
+        // If finger is far enough away, move toward it
+        if (Math.abs(diff) > 5) {
+            player.velocityX = diff > 0 ? player.speed : -player.speed;
+        } else {
+            player.velocityX = 0;
+        }
+    } 
+    // 3. Friction when no input
+    else {
+        player.velocityX *= 0.8;
     }
 
     player.x += player.velocityX;
 
-    // Keep player in bounds
+    // Bounds
     if (player.x - player.radius < 0) player.x = player.radius;
     if (player.x + player.radius > canvas.width) player.x = canvas.width - player.radius;
 
-    // Apply gravity to keep player on slope
+    // Apply gravity/slope positioning
     const slopeY = canvas.height - player.x * SLOPE_ANGLE;
     player.y = slopeY - player.radius;
 }
 
-// End game
 function endGame() {
     gameRunning = false;
     gameOverScreen.classList.remove('hidden');
     finalScoreDisplay.textContent = `Final Score: ${score}`;
 }
 
-// Restart game
 function restartGame() {
     gameRunning = true;
     score = 0;
     player.x = canvas.width / 2;
-    player.y = canvas.height - 100;
     player.velocityX = 0;
     obstacles = [];
     obstacleCounter = 0;
     gameOverScreen.classList.add('hidden');
-    gameLoop();
+    // Ensure no recursive loops if restartBtn is clicked multiple times
 }
 
 restartBtn.addEventListener('click', restartGame);
 
-// Main game loop
 function gameLoop() {
-    // Clear canvas
     ctx.fillStyle = '#1a1a2e';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -165,12 +185,11 @@ function gameLoop() {
         scoreDisplay.textContent = `Score: ${score}`;
     }
 
-    drawSlope(0);
+    drawSlope();
     drawObstacles();
     drawPlayer();
 
     requestAnimationFrame(gameLoop);
 }
 
-// Start game
 gameLoop();
