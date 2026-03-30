@@ -30,7 +30,48 @@ let obstacleCounter = 0;
 const keys = {};
 let isTouching = false;
 let touchX = 0;
+// --- NEW: FULLSCREEN & RESIZE LOGIC ---
 
+function resizeCanvas() {
+    // Make the canvas internal resolution match the window size
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    // Reset player position if they go off-screen during resize
+    if (player.x > canvas.width) player.x = canvas.width / 2;
+}
+
+function enterFullscreen() {
+    const docElm = document.documentElement;
+    if (docElm.requestFullscreen) {
+        docElm.requestFullscreen();
+    } else if (docElm.mozRequestFullScreen) { /* Firefox */
+        docElm.mozRequestFullScreen();
+    } else if (docElm.webkitRequestFullscreen) { /* Chrome, Safari, Opera */
+        docElm.webkitRequestFullscreen();
+    } else if (docElm.msRequestFullscreen) { /* IE/Edge */
+        docElm.msRequestFullscreen();
+    }
+}
+
+// Listen for window resizes
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas(); // Call once at start
+
+// --- UPDATED RESTART/START LOGIC ---
+
+function restartGame() {
+    // Trigger Fullscreen on the first click/tap
+    enterFullscreen();
+    
+    gameRunning = true;
+    score = 0;
+    player.x = canvas.width / 2;
+    player.velocityX = 0;
+    obstacles = [];
+    obstacleCounter = 0;
+    gameOverScreen.classList.add('hidden');
+}
 // Keyboard input
 window.addEventListener('keydown', (e) => { keys[e.key] = true; });
 window.addEventListener('keyup', (e) => { keys[e.key] = false; });
