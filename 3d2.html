@@ -3,339 +3,358 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Pro Game - Full World</title>
+    <title>Village Quest 3D</title>
     <style>
-        #hotbar {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 10px;
-    z-index: 100;
-}
+        :root {
+            color-scheme: dark;
+            --panel-bg: rgba(8, 14, 20, 0.72);
+            --panel-border: rgba(255, 255, 255, 0.12);
+            --accent: #69f1a7;
+            --warn: #ffd96a;
+            --text: #f6fbff;
+            --muted: rgba(246, 251, 255, 0.74);
+        }
 
-.hotbar-slot {
-    width: 60px;
-    height: 60px;
-    background: rgba(0, 0, 0, 0.6);
-    border: 2px solid #ffffff;
-    border-radius: 5px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    color: white;
-    position: relative;
-}
+        * { box-sizing: border-box; }
 
-.hotbar-slot.active {
-    border-color: #ffff00;
-    box-shadow: 0 0 10px #ffff00;
-}
+        body {
+            margin: 0;
+            overflow: hidden;
+            background:
+                radial-gradient(circle at top, rgba(133, 204, 255, 0.36), transparent 42%),
+                linear-gradient(180deg, #83c8ff 0%, #b8ecff 45%, #d8f6ff 100%);
+            color: var(--text);
+            font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+        }
 
-.hotbar-slot-icon { font-size: 1.5em; }
-
-.hotbar-slot-count {
-    position: absolute;
-    bottom: 2px;
-    right: 5px;
-    font-size: 0.8em;
-    color: #ffff00;
-}
-        body { margin: 0; overflow: hidden; background: #87CEEB; font-family: sans-serif; }
         canvas { display: block; }
+
         #ui {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            color: white;
+            position: fixed;
+            top: 18px;
+            left: 18px;
+            width: min(360px, calc(100vw - 36px));
+            padding: 16px 18px;
+            border-radius: 18px;
+            border: 1px solid var(--panel-border);
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
             pointer-events: none;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            z-index: 30;
         }
-        #counter { font-weight: bold; font-size: 1.2em; color: #ffff00; }
-        
-        /* Pause Menu */
-        #pauseMenu {
+
+        #ui h1 {
+            margin: 0 0 10px;
+            font-size: 1.8rem;
+            letter-spacing: 0.03em;
+        }
+
+        #status {
+            margin: 0 0 8px;
+            color: var(--warn);
+            font-weight: 700;
+        }
+
+        #counter,
+        #questLog,
+        #controlsHint {
+            margin: 6px 0 0;
+            color: var(--muted);
+        }
+
+        #crosshair {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            pointer-events: auto;
+            left: 50%;
+            top: 50%;
+            width: 14px;
+            height: 14px;
+            transform: translate(-50%, -50%);
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            border-radius: 999px;
+            box-shadow: 0 0 18px rgba(255, 255, 255, 0.35);
+            pointer-events: none;
+            z-index: 20;
         }
-        
-        #pauseMenu.active {
-            display: flex;
-        }
-        
-        #pausePanel {
-            background: #222;
-            border: 3px solid #32CD32;
-            padding: 40px;
-            border-radius: 10px;
-            text-align: center;
-            color: white;
-            pointer-events: auto;
-        }
-        
-        #pausePanel h2 {
-            color: #32CD32;
-            font-size: 2.5em;
-            margin: 0 0 30px 0;
-        }
-        
-        .setting {
-            margin: 20px 0;
-            text-align: left;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            pointer-events: auto;
-        }
-        
-        .setting label {
-            font-weight: bold;
-            min-width: 150px;
-        }
-        
-        .setting input[type="range"] {
-            width: 200px;
-            cursor: pointer;
-            pointer-events: auto;
-        }
-        
-        .setting input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            cursor: pointer;
-            pointer-events: auto;
-        }
-        
-        .setting-value {
-            min-width: 50px;
-            color: #ffff00;
-        }
-        
-        #buttonContainer {
-            margin-top: 40px;
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-        }
-        
-        button {
-            padding: 12px 30px;
-            font-size: 1.1em;
-            background: #32CD32;
-            color: #000;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background 0.2s;
-            pointer-events: auto;
-        }
-        
-        button:hover {
-            background: #00ff00;
-        }
-        
-        button.exit {
-            background: #FF6B6B;
-        }
-        
-        button.exit:hover {
-            background: #FF8787;
-        }
-        
-        /* BUILDING MENU */
-        #buildMenu {
+
+        #hotbar {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 999;
-            pointer-events: auto;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 60;
         }
-        
-        #buildMenu.active {
+
+        .hotbar-slot {
+            width: 72px;
+            height: 72px;
+            padding: 8px;
+            border-radius: 16px;
+            border: 1px solid var(--panel-border);
+            background: rgba(5, 11, 17, 0.78);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text);
+            cursor: pointer;
+        }
+
+        .hotbar-slot.active {
+            border-color: var(--accent);
+            box-shadow: 0 0 20px rgba(105, 241, 167, 0.35);
+            transform: translateY(-3px);
+        }
+
+        .hotbar-slot-icon {
+            font-size: 1.8rem;
+            line-height: 1;
+        }
+
+        .hotbar-slot-name {
+            font-size: 0.72rem;
+            color: var(--muted);
+            text-align: center;
+        }
+
+        .hotbar-slot-count {
+            font-size: 0.85rem;
+            color: var(--warn);
+        }
+
+        #inventoryPanel {
+            position: fixed;
+            right: 18px;
+            bottom: 18px;
+            width: min(300px, calc(100vw - 36px));
+            padding: 14px 16px;
+            border-radius: 18px;
+            border: 1px solid var(--panel-border);
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.24);
+            z-index: 40;
+        }
+
+        #inventoryPanel h2 {
+            margin: 0 0 10px;
+            font-size: 1rem;
+            letter-spacing: 0.05em;
+        }
+
+        #inventoryList {
+            display: grid;
+            gap: 8px;
+            max-height: 200px;
+            overflow: auto;
+        }
+
+        .inventory-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 8px 10px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--muted);
+        }
+
+        .overlay {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(5, 9, 14, 0.74);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+
+        .overlay.active {
             display: flex;
         }
-        
-        #buildPanel {
-            background: #222;
-            border: 3px solid #FF8C00;
-            padding: 40px;
-            border-radius: 10px;
-            text-align: center;
-            color: white;
-            pointer-events: auto;
+
+        .panel {
+            width: min(760px, calc(100vw - 32px));
+            max-height: calc(100vh - 32px);
+            overflow: auto;
+            padding: 24px;
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            background: linear-gradient(180deg, rgba(28, 38, 49, 0.97), rgba(11, 16, 22, 0.97));
+            box-shadow: 0 24px 90px rgba(0, 0, 0, 0.45);
         }
-        
-        #buildPanel h2 {
-            color: #FF8C00;
-            font-size: 2.5em;
-            margin: 0 0 30px 0;
+
+        .panel h2 {
+            margin: 0 0 10px;
+            font-size: 2rem;
         }
-        
+
+        .panel p {
+            margin: 0 0 18px;
+            color: var(--muted);
+        }
+
+        .settings-grid,
         .build-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 14px;
         }
-        
+
+        .setting,
         .build-item {
-            background: #333;
-            border: 2px solid #FF8C00;
-            padding: 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-            pointer-events: auto;
+            padding: 14px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
-        
-        .build-item:hover {
-            background: #444;
-            box-shadow: 0 0 15px #FF8C00;
-            transform: scale(1.05);
-        }
-        
-        .build-item-icon {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-        }
-        
+
+        .setting label,
         .build-item-name {
-            font-weight: bold;
-            color: #FF8C00;
-            margin-bottom: 5px;
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 700;
         }
-        
-        .build-item-cost {
-            font-size: 0.9em;
-            color: #ffff00;
+
+        .setting-value {
+            display: inline-block;
+            margin-top: 8px;
+            color: var(--warn);
         }
-        
-        #closeBuilMenuBtn {
-            margin-top: 20px;
-            padding: 12px 30px;
-            font-size: 1.1em;
-            background: #FF8C00;
-            color: #000;
+
+        input[type="range"] {
+            width: 100%;
+        }
+
+        .button-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 18px;
+        }
+
+        button {
+            padding: 12px 20px;
             border: none;
-            border-radius: 5px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, var(--accent), #5bc6ff);
+            color: #051017;
+            font-weight: 700;
             cursor: pointer;
-            font-weight: bold;
-            pointer-events: auto;
         }
-        
-        #closeBuilMenuBtn:hover {
-            background: #FFA500;
+
+        button.exit {
+            background: linear-gradient(135deg, #ff9175, #ff5f82);
+        }
+
+        .build-item {
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .build-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.24);
+        }
+
+        .build-item-icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .build-item-cost {
+            color: var(--warn);
+        }
+
+        @media (max-width: 720px) {
+            #inventoryPanel {
+                right: 10px;
+                left: 10px;
+                width: auto;
+                bottom: 106px;
+            }
+
+            #ui {
+                right: 10px;
+                left: 10px;
+                width: auto;
+            }
+
+            #hotbar {
+                gap: 6px;
+                bottom: 10px;
+            }
+
+            .hotbar-slot {
+                width: 60px;
+                height: 66px;
+            }
         }
     </style>
 </head>
 <body>
-
     <div id="ui">
-        <h1>3D PRO ENGINE</h1>
-        <p id="status">Go inside the house and talk to the Wizard</p>
-        <p id="counter">Stars: 0/40</p>
+        <h1>Village Quest 3D</h1>
+        <p id="status">Walk into Oakheart Village and talk to the villagers.</p>
+        <p id="counter">Stars: 0 / 40 | Wood: 0 / 45 | Ore: 0 / 12</p>
+        <p id="questLog">Quests: Wizard, Lumberjack, Miner, Baker.</p>
+        <p id="controlsHint">WASD move, Shift sprint, Space jump, E interact, Esc pause, B build.</p>
     </div>
 
-    <div id="pauseMenu">
-        <div id="pausePanel">
-            <h2>⏸ PAUSED</h2>
-            
-            <div class="setting">
-                <label>Master Volume:</label>
-                <input type="range" id="volumeSlider" min="0" max="100" value="100">
-                <span class="setting-value" id="volumeValue">100%</span>
+    <div id="crosshair"></div>
+
+    <div id="inventoryPanel">
+        <h2>INVENTORY</h2>
+        <div id="inventoryList"></div>
+    </div>
+
+    <div id="pauseMenu" class="overlay">
+        <div class="panel">
+            <h2>Paused</h2>
+            <p>Adjust the camera and movement feel, then jump back into the village.</p>
+            <div class="settings-grid">
+                <div class="setting">
+                    <label for="volumeSlider">Master Volume</label>
+                    <input type="range" id="volumeSlider" min="0" max="100" value="100">
+                    <span class="setting-value" id="volumeValue">100%</span>
+                </div>
+                <div class="setting">
+                    <label for="sensitivitySlider">Mouse Sensitivity</label>
+                    <input type="range" id="sensitivitySlider" min="0.4" max="2.5" step="0.1" value="1">
+                    <span class="setting-value" id="sensitivityValue">1.0x</span>
+                </div>
+                <div class="setting">
+                    <label for="speedSlider">Movement Speed</label>
+                    <input type="range" id="speedSlider" min="0.7" max="2.2" step="0.1" value="1">
+                    <span class="setting-value" id="speedValue">1.0x</span>
+                </div>
+                <div class="setting">
+                    <label for="fovSlider">Camera FOV</label>
+                    <input type="range" id="fovSlider" min="55" max="100" value="75">
+                    <span class="setting-value" id="fovValue">75</span>
+                </div>
             </div>
-            
-            <div class="setting">
-                <label>Mouse Sensitivity:</label>
-                <input type="range" id="sensitivitySlider" min="0.1" max="2" step="0.1" value="1">
-                <span class="setting-value" id="sensitivityValue">1.0x</span>
-            </div>
-            
-            <div class="setting">
-                <label>Movement Speed:</label>
-                <input type="range" id="speedSlider" min="0.5" max="2" step="0.1" value="1">
-                <span class="setting-value" id="speedValue">1.0x</span>
-            </div>
-            
-            <div class="setting">
-                <label>Motion Blur:</label>
-                <input type="checkbox" id="motionBlurToggle" checked>
-            </div>
-            
-            <div id="buttonContainer">
-                <button id="resumeBtn">Resume Game</button>
+            <div class="button-row">
+                <button id="resumeBtn">Resume</button>
                 <button id="resetBtn">Reset Position</button>
-                <button class="exit" id="exitBtn">Exit to Menu</button>
+                <button id="exitBtn" class="exit">Exit to Menu</button>
             </div>
         </div>
     </div>
 
-    <div id="hotbar">
-        <div class="hotbar-slot" data-slot="0">
-            <div class="hotbar-slot-icon">-</div>
-            <div class="hotbar-slot-count">0</div>
-        </div>
-        <div class="hotbar-slot" data-slot="1">
-            <div class="hotbar-slot-icon">-</div>
-            <div class="hotbar-slot-count">0</div>
-        </div>
-        <div class="hotbar-slot" data-slot="2">
-            <div class="hotbar-slot-icon">-</div>
-            <div class="hotbar-slot-count">0</div>
-        </div>
-        <div class="hotbar-slot" data-slot="3">
-            <div class="hotbar-slot-icon">-</div>
-            <div class="hotbar-slot-count">0</div>
-        </div>
-        <div class="hotbar-slot" data-slot="4">
-            <div class="hotbar-slot-icon">-</div>
-            <div class="hotbar-slot-count">0</div>
-        </div>
-    </div>
-
-    <!-- BUILD MENU -->
-    <div id="buildMenu">
-        <div id="buildPanel">
-            <h2>🏗️ BUILDING MENU</h2>
+    <div id="buildMenu" class="overlay">
+        <div class="panel">
+            <h2>Build Menu</h2>
+            <p>Spend wood to place simple props near the player.</p>
             <div class="build-grid">
                 <div class="build-item" data-building="wall">
                     <div class="build-item-icon">🧱</div>
                     <div class="build-item-name">Wall</div>
                     <div class="build-item-cost">Cost: 10 Wood</div>
-                </div>
-                <div class="build-item" data-building="door">
-                    <div class="build-item-icon">🚪</div>
-                    <div class="build-item-name">Door</div>
-                    <div class="build-item-cost">Cost: 15 Wood</div>
-                </div>
-                <div class="build-item" data-building="roof">
-                    <div class="build-item-icon">🏠</div>
-                    <div class="build-item-name">Roof</div>
-                    <div class="build-item-cost">Cost: 20 Wood</div>
-                </div>
-                <div class="build-item" data-building="floor">
-                    <div class="build-item-icon">📦</div>
-                    <div class="build-item-name">Floor</div>
-                    <div class="build-item-cost">Cost: 12 Wood</div>
                 </div>
                 <div class="build-item" data-building="lamp">
                     <div class="build-item-icon">💡</div>
@@ -347,9 +366,35 @@
                     <div class="build-item-name">Chest</div>
                     <div class="build-item-cost">Cost: 8 Wood</div>
                 </div>
+                <div class="build-item" data-building="roof">
+                    <div class="build-item-icon">🏠</div>
+                    <div class="build-item-name">Roof Piece</div>
+                    <div class="build-item-cost">Cost: 20 Wood</div>
+                </div>
+                <div class="build-item" data-building="floor">
+                    <div class="build-item-icon">🪵</div>
+                    <div class="build-item-name">Floor Tile</div>
+                    <div class="build-item-cost">Cost: 12 Wood</div>
+                </div>
+                <div class="build-item" data-building="door">
+                    <div class="build-item-icon">🚪</div>
+                    <div class="build-item-name">Door Frame</div>
+                    <div class="build-item-cost">Cost: 15 Wood</div>
+                </div>
             </div>
-            <button id="closeBuilMenuBtn">Close Menu (B)</button>
+            <div class="button-row">
+                <button id="closeBuildMenuBtn">Close Build Menu</button>
+            </div>
         </div>
+    </div>
+
+    <div id="hotbar">
+        <div class="hotbar-slot" data-slot="0"><div class="hotbar-slot-icon">-</div><div class="hotbar-slot-name">Empty</div><div class="hotbar-slot-count">0</div></div>
+        <div class="hotbar-slot" data-slot="1"><div class="hotbar-slot-icon">-</div><div class="hotbar-slot-name">Empty</div><div class="hotbar-slot-count">0</div></div>
+        <div class="hotbar-slot" data-slot="2"><div class="hotbar-slot-icon">-</div><div class="hotbar-slot-name">Empty</div><div class="hotbar-slot-count">0</div></div>
+        <div class="hotbar-slot" data-slot="3"><div class="hotbar-slot-icon">-</div><div class="hotbar-slot-name">Empty</div><div class="hotbar-slot-count">0</div></div>
+        <div class="hotbar-slot" data-slot="4"><div class="hotbar-slot-icon">-</div><div class="hotbar-slot-name">Empty</div><div class="hotbar-slot-count">0</div></div>
+        <div class="hotbar-slot" data-slot="5"><div class="hotbar-slot-icon">-</div><div class="hotbar-slot-name">Empty</div><div class="hotbar-slot-count">0</div></div>
     </div>
 
     <script type="importmap">
@@ -357,690 +402,956 @@
     </script>
 
     <script type="module">
-import * as THREE from 'three';
+        import * as THREE from "three";
 
-// --- ENGINE SETUP ---
-const scene = new THREE.Scene();
-const skyColor = 0x87CEEB;
-scene.background = new THREE.Color(skyColor);
-// This ensures the fog doesn't start too early, which causes that "line" effect
-scene.fog = new THREE.Fog(skyColor, 100, 1000);
+        const scene = new THREE.Scene();
+        const skyColor = 0x91ccff;
+        scene.background = new THREE.Color(skyColor);
+        scene.fog = new THREE.Fog(0xbfe7ff, 260, 1900);
 
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.4, 4500);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        document.body.appendChild(renderer.domElement);
 
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.5, 3000);
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.shadowMap.enabled = true;
-document.body.appendChild(renderer.domElement);
-window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-});
-// --- LIGHTING ---
-const ambient = new THREE.AmbientLight(0xffffff, 0.7);
-scene.add(ambient);
-const sunLight = new THREE.DirectionalLight(0xffffff, 1.2);
-sunLight.position.set(50, 100, 50);
-sunLight.castShadow = true;
-scene.add(sunLight);
+        const hemi = new THREE.HemisphereLight(0xdaf2ff, 0x315d2f, 1.1);
+        scene.add(hemi);
 
-// --- STATE ---
-let starsCollected = 0;
-let questActive = false;
-let hasHat = false;
-const targetStars = 40;
-let stars = [];
-const obstacles = [];
+        const sunLight = new THREE.DirectionalLight(0xffffff, 1.15);
+        sunLight.position.set(240, 320, 180);
+        sunLight.castShadow = true;
+        sunLight.shadow.mapSize.set(2048, 2048);
+        sunLight.shadow.camera.left = -400;
+        sunLight.shadow.camera.right = 400;
+        sunLight.shadow.camera.top = 400;
+        sunLight.shadow.camera.bottom = -400;
+        scene.add(sunLight);
 
-const statusEl = document.getElementById('status');
-const counterEl = document.getElementById('counter');
+        const ambient = new THREE.AmbientLight(0xffffff, 0.28);
+        scene.add(ambient);
 
-// --- ENVIRONMENT ---
-const floor = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000), new THREE.MeshStandardMaterial({ color: 0x228B22 }));
-floor.rotation.x = -Math.PI / 2;
-floor.receiveShadow = true;
-scene.add(floor);
-// === SIMPLE GRASS SYSTEM ===
-const grassGeo = new THREE.PlaneGeometry(0.5, 0.5);
-const grassMat = new THREE.MeshBasicMaterial({ 
-    color: 0x2ecc71, 
-    side: THREE.DoubleSide 
-});
-// === FLOWERS ===
-const flowerGeo = new THREE.SphereGeometry(0.15, 6, 6);
+        const world = new THREE.Group();
+        scene.add(world);
 
-for (let i = 0; i < 100; i++) {
-    const flower = new THREE.Mesh(
-        flowerGeo,
-        new THREE.MeshStandardMaterial({ 
-            color: Math.random() > 0.5 ? 0xff69b4 : 0xffff00 
-        })
-    );
+        const obstacles = [];
+        const placedBuilds = [];
+        const stars = [];
+        const trees = [];
+        const oreNodes = [];
+        const villagers = [];
+        const talkables = [];
+        const animatedPickups = [];
 
-    flower.position.set(
-        (Math.random() - 0.5) * 400,
-        0.15,
-        (Math.random() - 0.5) * 400
-    );
+        const statusEl = document.getElementById("status");
+        const counterEl = document.getElementById("counter");
+        const questLogEl = document.getElementById("questLog");
+        const inventoryListEl = document.getElementById("inventoryList");
+        const pauseMenu = document.getElementById("pauseMenu");
+        const buildMenu = document.getElementById("buildMenu");
+        const hotbarSlots = [...document.querySelectorAll(".hotbar-slot")];
 
-    scene.add(flower);
-}
-for (let i = 0; i < 500; i++) {
-    const grass = new THREE.Mesh(grassGeo, grassMat);
+        const inventory = [
+            { name: "empty", icon: "-", count: 0 },
+            { name: "empty", icon: "-", count: 0 },
+            { name: "empty", icon: "-", count: 0 },
+            { name: "empty", icon: "-", count: 0 },
+            { name: "empty", icon: "-", count: 0 },
+            { name: "empty", icon: "-", count: 0 }
+        ];
 
-    grass.position.x = (Math.random() - 0.5) * 500;
-    grass.position.z = (Math.random() - 0.5) * 500;
-    grass.position.y = 0.01;
+        let currentSlot = 0;
+        let isPaused = false;
+        let isBuildMenuOpen = false;
+        let gameSensitivity = 1;
+        let gameSpeed = 1;
+        let yaw = 0;
+        let pitch = -0.15;
+        const keys = {};
+        const velocity = new THREE.Vector3();
+        const playerRadius = 0.58;
 
-    grass.rotation.x = -Math.PI / 2;
-    grass.rotation.z = Math.random() * Math.PI;
+        const worldSize = 1800;
+        const targetStars = 40;
+        const woodTarget = 45;
+        const oreTarget = 12;
+        const berryTarget = 10;
 
-    scene.add(grass);
-}
-scene.traverse(obj => {
-    if (obj.geometry && obj.geometry.type === "PlaneGeometry") {
-        obj.rotation.z += 0.0005;
-    }
-});
+        const questState = {
+            wizardAccepted: false,
+            wizardDone: false,
+            lumberAccepted: false,
+            lumberDone: false,
+            minerAccepted: false,
+            minerDone: false,
+            bakerAccepted: false,
+            bakerDone: false,
+            starsCollected: 0,
+            woodCollected: 0,
+            oreCollected: 0,
+            berriesCollected: 0,
+            hasHat: false,
+            hasAxe: false,
+            hasPickaxe: false
+        };
 
-// --- THE HOUSE ---
-const house = new THREE.Group();
-const wallMat = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
-const wallHeight = 6;
+        const grassFloor = new THREE.Mesh(
+            new THREE.PlaneGeometry(worldSize, worldSize),
+            new THREE.MeshStandardMaterial({ color: 0x6fbf63, roughness: 1 })
+        );
+        grassFloor.rotation.x = -Math.PI / 2;
+        grassFloor.receiveShadow = true;
+        world.add(grassFloor);
 
-const backWall = new THREE.Mesh(new THREE.BoxGeometry(8, wallHeight, 0.5), wallMat);
-backWall.position.set(0, wallHeight/2, -4);
-const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.5, wallHeight, 8), wallMat);
-leftWall.position.set(-4, wallHeight/2, 0);
-const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.5, wallHeight, 8), wallMat);
-rightWall.position.set(4, wallHeight/2, 0);
-const frontLeft = new THREE.Mesh(new THREE.BoxGeometry(3, wallHeight, 0.5), wallMat);
-frontLeft.position.set(-2.5, wallHeight/2, 4);
-const frontRight = new THREE.Mesh(new THREE.BoxGeometry(3, wallHeight, 0.5), wallMat);
-frontRight.position.set(2.5, wallHeight/2, 4);
-const frontTop = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 0.5), wallMat);
-frontTop.position.set(0, 5, 4);
+        const river = new THREE.Mesh(
+            new THREE.BoxGeometry(260, 0.18, 1200),
+            new THREE.MeshStandardMaterial({ color: 0x47b7ff, transparent: true, opacity: 0.88 })
+        );
+        river.position.set(-520, 0.08, 60);
+        river.receiveShadow = true;
+        world.add(river);
 
-const roof = new THREE.Mesh(new THREE.ConeGeometry(7, 4, 4), new THREE.MeshStandardMaterial({ color: 0x5C4033 }));
-roof.position.y = 8; roof.rotation.y = Math.PI / 4;
+        const villageSquare = new THREE.Mesh(
+            new THREE.CircleGeometry(110, 40),
+            new THREE.MeshStandardMaterial({ color: 0xcab98c, roughness: 0.95 })
+        );
+        villageSquare.rotation.x = -Math.PI / 2;
+        villageSquare.position.set(0, 0.04, 0);
+        world.add(villageSquare);
 
-house.add(backWall, leftWall, rightWall, frontLeft, frontRight, frontTop, roof);
-house.position.set(0, 0, -25);
-scene.add(house);
-obstacles.push(backWall, leftWall, rightWall, frontLeft, frontRight);
+        const marketRing = new THREE.Mesh(
+            new THREE.TorusGeometry(125, 7, 12, 60),
+            new THREE.MeshStandardMaterial({ color: 0x997b54, roughness: 0.9 })
+        );
+        marketRing.rotation.x = Math.PI / 2;
+        marketRing.position.set(0, 0.12, 0);
+        world.add(marketRing);
 
-// --- INTERIOR LAMP ---
-const lamp = new THREE.PointLight(0xffffaa, 2, 12);
-lamp.position.set(2, 4, -25);
-scene.add(lamp);
-const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.3), new THREE.MeshBasicMaterial({ color: 0xffffaa }));
-bulb.position.copy(lamp.position);
-scene.add(bulb);
-
-// --- THE WIZARD ---
-const npc = new THREE.Group();
-const npcBody = new THREE.Mesh(new THREE.CapsuleGeometry(0.4, 0.8), new THREE.MeshStandardMaterial({ color: 0x4B0082 }));
-npcBody.position.y = 0.6;
-npc.add(npcBody);
-npc.position.set(2, 1, -27); // Inside the back corner
-scene.add(npc);
-
-// --- PLAYER ---
-const playerGroup = new THREE.Group();
-const bodyParts = new THREE.Group();
-playerGroup.add(bodyParts);
-const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.4, 0.6), new THREE.MeshStandardMaterial({ color: 0x333333 }));
-torso.position.y = 0.6;
-const head = new THREE.Mesh(new THREE.SphereGeometry(0.3), new THREE.MeshStandardMaterial({ color: 0xeeeeee }));
-head.position.y = 1.2;
-bodyParts.add(torso, head);
-const hat = new THREE.Mesh(new THREE.ConeGeometry(0.4, 0.7, 12), new THREE.MeshStandardMaterial({ color: 0xff0000 }));
-hat.position.y = 1.6; hat.visible = false;
-bodyParts.add(hat);
-scene.add(playerGroup);
-
-// --- BIOME GENERATOR (Forest with Trees) ---
-let trees = [];
-
-function generateForest() {
-    const trunkGeo = new THREE.CylinderGeometry(0.4, 0.5, 6, 8);
-    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
-    const foliageGeo = new THREE.ConeGeometry(2.5, 5, 8);
-    const foliageMat = new THREE.MeshStandardMaterial({ color: 0x228B22 });
-    
-    for (let i = 0; i < 80; i++) {
-        let x, z, validSpot = false;
-        
-        // Ensure trees don't spawn on houses or too close
-        while (!validSpot) {
-            x = (Math.random() - 0.5) * 300;
-            z = (Math.random() - 0.5) * 300;
-            const distToWizardHouse = Math.sqrt(x*x + (z+25)*(z+25));
-            const distToLumberjackHouse = Math.sqrt((x-80)*(x-80) + (z-78)*(z-78));
-            if (distToWizardHouse > 20 && distToLumberjackHouse > 20) validSpot = true;
+        function addObstacle(mesh) {
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            world.add(mesh);
+            obstacles.push(mesh);
         }
-        
-        const trunk = new THREE.Mesh(trunkGeo, trunkMat);
-        trunk.position.set(x, 3.1, z);      
-        trunk.castShadow = true;
-        trunk.receiveShadow = true;
-        scene.add(trunk);
-        
-        const foliage = new THREE.Mesh(foliageGeo, foliageMat);
-        foliage.position.set(x, 8, z);
-        foliage.castShadow = true;
-        foliage.receiveShadow = true;
-        scene.add(foliage);
-        
-        trees.push({ 
-            trunk: trunk, 
-            foliage: foliage, 
-            health: 3, 
-            x: x, 
-            z: z,
-            originalScale: 1
-        });
-        obstacles.push(trunk);
-    }
-}
-generateForest();
 
-// --- THE LUMBERJACK HOUSE ---
-const lumberHouse = new THREE.Group();
-const lumberWallMat = new THREE.MeshStandardMaterial({ color: 0xA0522D });
-const lumberWallHeight = 5;
+        function createLampPost(x, z) {
+            const pole = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.18, 0.18, 6, 10),
+                new THREE.MeshStandardMaterial({ color: 0x5f686d })
+            );
+            pole.position.set(x, 3, z);
+            addObstacle(pole);
 
-const lumberBackWall = new THREE.Mesh(new THREE.BoxGeometry(10, lumberWallHeight, 0.5), lumberWallMat);
-lumberBackWall.position.set(0, lumberWallHeight/2, -5);
-const lumberLeftWall = new THREE.Mesh(new THREE.BoxGeometry(0.5, lumberWallHeight, 10), lumberWallMat);
-lumberLeftWall.position.set(-5, lumberWallHeight/2, 0);
-const lumberRightWall = new THREE.Mesh(new THREE.BoxGeometry(0.5, lumberWallHeight, 10), lumberWallMat);
-lumberRightWall.position.set(5, lumberWallHeight/2, 0);
-const lumberFrontLeft = new THREE.Mesh(new THREE.BoxGeometry(4, lumberWallHeight, 0.5), lumberWallMat);
-lumberFrontLeft.position.set(-3, lumberWallHeight/2, 5);
-const lumberFrontRight = new THREE.Mesh(new THREE.BoxGeometry(4, lumberWallHeight, 0.5), lumberWallMat);
-lumberFrontRight.position.set(3, lumberWallHeight/2, 5);
-const lumberFrontTop = new THREE.Mesh(new THREE.BoxGeometry(2.5, 2, 0.5), lumberWallMat);
-lumberFrontTop.position.set(0, 4.5, 5);
-
-// Wooden floor
-const floorGeo = new THREE.PlaneGeometry(10, 10);
-const floorMat = new THREE.MeshStandardMaterial({ color: 0x654321, roughness: 0.8 });
-const lumberFloor = new THREE.Mesh(floorGeo, floorMat);
-lumberFloor.rotation.x = -Math.PI / 2;
-lumberFloor.position.set(0, 0.1, 0);
-lumberFloor.receiveShadow = true;
-
-const lumberRoof = new THREE.Mesh(new THREE.ConeGeometry(8, 3.5, 4), new THREE.MeshStandardMaterial({ color: 0x3D3D3D }));
-lumberRoof.position.y = 7;
-lumberRoof.rotation.y = Math.PI / 4;
-
-lumberHouse.add(lumberBackWall, lumberLeftWall, lumberRightWall, lumberFrontLeft, lumberFrontRight, lumberFrontTop, lumberRoof, lumberFloor);
-lumberHouse.position.set(80, 0, 80);
-scene.add(lumberHouse);
-obstacles.push(lumberBackWall, lumberLeftWall, lumberRightWall, lumberFrontLeft, lumberFrontRight);
-
-// --- THE LUMBERJACK NPC ---
-const lumberjack = new THREE.Group();
-const lumberjackBody = new THREE.Mesh(new THREE.CapsuleGeometry(0.4, 0.8), new THREE.MeshStandardMaterial({ color: 0xFF6347 }));
-lumberjackBody.position.y = 0.6;
-lumberjack.add(lumberjackBody);
-lumberjack.position.set(82, 1, 78);
-scene.add(lumberjack);
-
-// --- QUEST STATE ---
-let lumberjackQuestActive = false;
-let woodCollected = 0;
-const woodTarget = 45;
-
-// --- INTERACTION ---
-window.addEventListener('mousedown', () => {
-    if (!document.pointerLockElement) { document.body.requestPointerLock(); return; }
-    
-    const raycaster = new THREE.Raycaster();
-    raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-    if (raycaster.intersectObject(npc, true).length > 0) {
-        if (!questActive && !hasHat) {
-            const accept = confirm("Wizard: 'Hi! Can you find 40 Gold Stars in the city? I'll give you a hat!'");
-            if (accept) {
-                questActive = true; spawnStars();
-                statusEl.innerText = "QUEST: Collect 40 Stars!";
-            }
-        } else if (starsCollected >= targetStars && !hasHat) {
-            alert("Wizard: 'Amazing! Here is your reward.'");
-            hasHat = true; hat.visible = true;
-            statusEl.innerText = "QUEST COMPLETE!";
+            const lamp = new THREE.Mesh(
+                new THREE.SphereGeometry(0.35, 12, 12),
+                new THREE.MeshStandardMaterial({ color: 0xffeea8, emissive: 0xffd860, emissiveIntensity: 1.2 })
+            );
+            lamp.position.set(x, 6.4, z);
+            lamp.castShadow = true;
+            world.add(lamp);
         }
-    } 
-    // Lumberjack interaction
-    if (raycaster.intersectObject(lumberjack, true).length > 0) {
-        if (!lumberjackQuestActive) {
-            const accept = confirm("Lumberjack: 'Hey there! I need 45 wood to build a cabin. Can you chop down trees and bring me the wood? I'll give you an axe to help!'");
-            if (accept) {
-                lumberjackQuestActive = true;
-                addItemToInventory('🪓', 'Axe');
-                statusEl.innerText = "QUEST: Collect 45 Wood!";
-                alert("Lumberjack: 'Here's your axe. The trees are all around the forest. Chop them down and bring the wood back to me!'");
+
+        function createHouse(baseX, baseZ, options = {}) {
+            const {
+                width = 10,
+                depth = 10,
+                height = 5.5,
+                wallColor = 0xc78c5a,
+                roofColor = 0x6b3f2a,
+                doorSide = "south"
+            } = options;
+
+            const group = new THREE.Group();
+            group.position.set(baseX, 0, baseZ);
+
+            const wallMat = new THREE.MeshStandardMaterial({ color: wallColor, roughness: 0.9 });
+            const roofMat = new THREE.MeshStandardMaterial({ color: roofColor, roughness: 0.95 });
+
+            const left = new THREE.Mesh(new THREE.BoxGeometry(0.6, height, depth), wallMat);
+            left.position.set(-width / 2, height / 2, 0);
+            const right = left.clone();
+            right.position.x = width / 2;
+
+            const back = new THREE.Mesh(new THREE.BoxGeometry(width, height, 0.6), wallMat);
+            back.position.set(0, height / 2, -depth / 2);
+
+            const frontLeft = new THREE.Mesh(new THREE.BoxGeometry(width / 2 - 1.4, height, 0.6), wallMat);
+            const frontRight = frontLeft.clone();
+            frontLeft.position.set(-(width / 4 + 0.7), height / 2, depth / 2);
+            frontRight.position.set(width / 4 + 0.7, height / 2, depth / 2);
+
+            const top = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.6, 0.6), wallMat);
+            top.position.set(0, height - 0.25, depth / 2);
+
+            if (doorSide === "north") {
+                back.position.z = depth / 2;
+                frontLeft.position.z = -depth / 2;
+                frontRight.position.z = -depth / 2;
+                top.position.z = -depth / 2;
             }
-        } else if (woodCollected >= woodTarget) {
-            alert("Lumberjack: 'Excellent work! You're a true lumberjack! Thank you!'");
-            woodCollected = 0;
-            inventory.forEach((item, i) => {
-                if (item.name === 'Wood') inventory[i] = { icon: '-', count: 0, name: 'empty' };
+
+            const roof = new THREE.Mesh(new THREE.ConeGeometry(Math.max(width, depth) * 0.82, 4, 4), roofMat);
+            roof.position.y = height + 2.4;
+            roof.rotation.y = Math.PI / 4;
+
+            const floor = new THREE.Mesh(
+                new THREE.BoxGeometry(width - 0.3, 0.18, depth - 0.3),
+                new THREE.MeshStandardMaterial({ color: 0x836246, roughness: 1 })
+            );
+            floor.position.y = 0.09;
+
+            group.add(left, right, back, frontLeft, frontRight, top, roof, floor);
+            world.add(group);
+
+            [left, right, back, frontLeft, frontRight].forEach((mesh) => {
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
+                obstacles.push(mesh);
             });
-            updateInventoryUI();
-            lumberjackQuestActive = false;
-            statusEl.innerText = "Quest Complete!";
-        } else if (lumberjackQuestActive) {
-            alert(`Lumberjack: 'You have ${woodCollected}/${woodTarget} wood. Keep chopping!'`);
+
+            const windowMat = new THREE.MeshBasicMaterial({ color: 0xffd57e, transparent: true, opacity: 0.8 });
+            [[-2.6, 2.7], [2.6, 2.7]].forEach(([x, y]) => {
+                const window = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 1.6), windowMat);
+                window.position.set(baseX + x, y, baseZ + (doorSide === "north" ? -depth / 2 - 0.32 : depth / 2 + 0.32));
+                window.rotation.y = doorSide === "north" ? Math.PI : 0;
+                world.add(window);
+            });
+
+            return group;
         }
-    }
-});
 
-function spawnStars() {
-    const starGeo = new THREE.IcosahedronGeometry(0.8, 0); // Big Hitbox Geometry
-    const starMat = new THREE.MeshStandardMaterial({ color: 0xffff00, emissive: 0xffaa00 });
-    for (let i = 0; i < targetStars; i++) {
-        const star = new THREE.Mesh(starGeo, starMat);
-        star.position.set(Math.random() * 200 - 100, 1.5, Math.random() * 200 - 100);
-        scene.add(star); stars.push(star);
-    }
-}
+        function createTree(x, z) {
+            const trunk = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.55, 0.7, 6, 10),
+                new THREE.MeshStandardMaterial({ color: 0x78512f })
+            );
+            trunk.position.set(x, 3, z);
+            addObstacle(trunk);
 
-// --- PAUSE MENU ---
-const pauseMenu = document.getElementById('pauseMenu');
-const resumeBtn = document.getElementById('resumeBtn');
-const resetBtn = document.getElementById('resetBtn');
-const exitBtn = document.getElementById('exitBtn');
-const volumeSlider = document.getElementById('volumeSlider');
-const sensitivitySlider = document.getElementById('sensitivitySlider');
-const speedSlider = document.getElementById('speedSlider');
-const motionBlurToggle = document.getElementById('motionBlurToggle');
-const volumeValue = document.getElementById('volumeValue');
-const sensitivityValue = document.getElementById('sensitivityValue');
-const speedValue = document.getElementById('speedValue');
+            const foliage = new THREE.Mesh(
+                new THREE.ConeGeometry(3.2, 6.5, 10),
+                new THREE.MeshStandardMaterial({ color: 0x2f8c48 })
+            );
+            foliage.position.set(x, 8.4, z);
+            foliage.castShadow = true;
+            foliage.receiveShadow = true;
+            world.add(foliage);
 
-let isPaused = false;
-let gameSensitivity = 1;
-let gameSpeed = 1;
-
-window.addEventListener('keydown', (e) => {
-    if (e.code === 'Escape') {
-        isPaused = !isPaused;
-        if (isPaused) {
-            pauseMenu.classList.add('active');
-            document.exitPointerLock?.();
-            // Show cursor
-            document.body.style.cursor = 'auto';
-        } else {
-            pauseMenu.classList.remove('active');
-            document.body.style.cursor = 'none';
-            document.body.requestPointerLock();
+            trees.push({ trunk, foliage, health: 3 });
         }
-    }
-});
 
-resumeBtn.addEventListener('click', () => {
-    isPaused = false;
-    pauseMenu.classList.remove('active');
-    document.body.style.cursor = 'none';
-    document.body.requestPointerLock();
-});
+        function createBerryBush(x, z) {
+            const bush = new THREE.Mesh(
+                new THREE.SphereGeometry(1.8, 10, 10),
+                new THREE.MeshStandardMaterial({ color: 0x388c47 })
+            );
+            bush.position.set(x, 1.6, z);
+            bush.castShadow = true;
+            bush.receiveShadow = true;
+            world.add(bush);
+            obstacles.push(bush);
 
-resetBtn.addEventListener('click', () => {
-    playerGroup.position.set(0, 2, 20);
-    velocity.set(0, 0, 0);
-    
-});
-
-exitBtn.addEventListener('click', () => {
-    document.exitPointerLock?.();
-    document.body.style.cursor = 'auto';
-    window.location.href = 'index.html';
-});
-
-volumeSlider.addEventListener('input', (e) => {
-    volumeValue.innerText = e.target.value + '%';
-});
-
-sensitivitySlider.addEventListener('input', (e) => {
-    gameSensitivity = parseFloat(e.target.value);
-    sensitivityValue.innerText = gameSensitivity.toFixed(1) + 'x';
-});
-
-speedSlider.addEventListener('input', (e) => {
-    gameSpeed = parseFloat(e.target.value);
-    speedValue.innerText = gameSpeed.toFixed(1) + 'x';
-});
-
-motionBlurToggle.addEventListener('change', (e) => {
-    // Toggle effect here if implemented
-});
-
-// --- INVENTORY SYSTEM ---
-let currentSlot = 0;
-const hotbarSlots = document.querySelectorAll('.hotbar-slot');
-const inventory = [
-    { icon: '-', count: 0, name: 'empty' },
-    { icon: '-', count: 0, name: 'empty' },
-    { icon: '-', count: 0, name: 'empty' },
-    { icon: '-', count: 0, name: 'empty' },
-    { icon: '-', count: 0, name: 'empty' }
-];
-
-function addItemToInventory(itemIcon, itemName) {
-    for (let i = 0; i < inventory.length; i++) {
-        if (inventory[i].name === itemName) {
-            inventory[i].count++;
-            updateInventoryUI();
-            return;
+            for (let i = 0; i < 8; i++) {
+                const berry = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.18, 8, 8),
+                    new THREE.MeshStandardMaterial({ color: 0xc41546, emissive: 0x5a0018, emissiveIntensity: 0.4 })
+                );
+                berry.position.set(
+                    x + (Math.random() - 0.5) * 2,
+                    1.4 + Math.random() * 1.2,
+                    z + (Math.random() - 0.5) * 2
+                );
+                berry.userData.type = "berry";
+                berry.userData.collected = false;
+                berry.userData.baseY = berry.position.y;
+                world.add(berry);
+                animatedPickups.push(berry);
+            }
         }
-    }
-    // Add new item
-    for (let i = 0; i < inventory.length; i++) {
-        if (inventory[i].name === 'empty') {
-            inventory[i] = { icon: itemIcon, count: 1, name: itemName };
-            updateInventoryUI();
-            return;
+
+        function createOreNode(x, z) {
+            const rock = new THREE.Mesh(
+                new THREE.DodecahedronGeometry(2.4, 0),
+                new THREE.MeshStandardMaterial({ color: 0x6a6f7b, roughness: 1 })
+            );
+            rock.position.set(x, 2, z);
+            rock.castShadow = true;
+            rock.receiveShadow = true;
+            world.add(rock);
+            obstacles.push(rock);
+            oreNodes.push({ mesh: rock, health: 3 });
         }
-    }
-    console.log('Inventory full!');
-}
 
-function updateInventoryUI() {
-    hotbarSlots.forEach((slot, index) => {
-        const item = inventory[index];
-        const icon = slot.querySelector('.hotbar-slot-icon');
-        const count = slot.querySelector('.hotbar-slot-count');
-        icon.innerText = item.icon;
-        count.innerText = item.count > 0 ? item.count : '0';
-    });
-}
-
-// Switch with number keys or mouse wheel
-window.addEventListener('keydown', (e) => {
-    const num = parseInt(e.key);
-    if (num >= 1 && num <= 5 && !isPaused) {
-        currentSlot = num - 1;
-        selectSlot(currentSlot);
-    }
-});
-
-window.addEventListener('wheel', (e) => {
-    if (isPaused) return;
-    e.preventDefault();
-    currentSlot += e.deltaY > 0 ? 1 : -1;
-    currentSlot = (currentSlot + hotbarSlots.length) % hotbarSlots.length;
-    selectSlot(currentSlot);
-});
-
-// Click to select
-hotbarSlots.forEach((slot, index) => {
-    slot.addEventListener('click', () => {
-        selectSlot(index);
-    });
-});
-
-function selectSlot(slotIndex) {
-    currentSlot = slotIndex;
-    hotbarSlots.forEach((slot, index) => {
-        slot.classList.remove('active');
-    });
-    hotbarSlots[currentSlot].classList.add('active');
-    console.log(`Selected slot: ${currentSlot + 1} - ${inventory[currentSlot].name}`);
-}
-
-// Initialize first slot as active
-selectSlot(0);
-
-// --- BUILDING SYSTEM ---
-const buildMenu = document.getElementById('buildMenu');
-const buildPanel = document.getElementById('buildPanel');
-const closeBuilMenuBtn = document.getElementById('closeBuilMenuBtn');
-const buildItems = document.querySelectorAll('.build-item');
-let isBuildMenuOpen = false;
-
-const buildingCosts = {
-    wall: 10,
-    door: 15,
-    roof: 20,
-    floor: 12,
-    lamp: 5,
-    chest: 8
-};
-
-window.addEventListener('keydown', (e) => {
-    if (e.key.toLowerCase() === 'b' && !isPaused) {
-        isBuildMenuOpen = !isBuildMenuOpen;
-        if (isBuildMenuOpen) {
-            buildMenu.classList.add('active');
-            document.exitPointerLock?.();
-            document.body.style.cursor = 'auto';
-        } else {
-            buildMenu.classList.remove('active');
-            document.body.style.cursor = 'none';
-            document.body.requestPointerLock();
+        function createStar(x, z) {
+            const star = new THREE.Mesh(
+                new THREE.IcosahedronGeometry(0.82, 0),
+                new THREE.MeshStandardMaterial({ color: 0xffed66, emissive: 0xffb700, emissiveIntensity: 0.7 })
+            );
+            star.position.set(x, 2, z);
+            star.userData.baseY = star.position.y;
+            star.castShadow = true;
+            world.add(star);
+            stars.push(star);
+            animatedPickups.push(star);
         }
-    }
-});
 
-closeBuilMenuBtn.addEventListener('click', () => {
-    isBuildMenuOpen = false;
-    buildMenu.classList.remove('active');
-    document.body.style.cursor = 'none';
-    document.body.requestPointerLock();
-});
+        function createVillager(name, color, x, z, title) {
+            const group = new THREE.Group();
+            const body = new THREE.Mesh(
+                new THREE.CapsuleGeometry(0.42, 0.85, 4, 10),
+                new THREE.MeshStandardMaterial({ color })
+            );
+            body.position.y = 0.7;
+            const head = new THREE.Mesh(
+                new THREE.SphereGeometry(0.34, 16, 16),
+                new THREE.MeshStandardMaterial({ color: 0xf3e0cf })
+            );
+            head.position.y = 1.5;
+            group.add(body, head);
+            group.position.set(x, 1, z);
+            group.userData.name = name;
+            group.userData.title = title;
+            scene.add(group);
+            villagers.push(group);
+            talkables.push(group);
+            return group;
+        }
 
-buildItems.forEach(item => {
-    item.addEventListener('click', () => {
-        const buildingType = item.getAttribute('data-building');
-        const cost = buildingCosts[buildingType];
-        
-        let woodCount = 0;
-        inventory.forEach(slot => {
-            if (slot.name === 'Wood') woodCount += slot.count;
-        });
-        
-        if (woodCount >= cost) {
-            alert(`You built a ${buildingType}! Used ${cost} wood.`);
-            // Subtract wood from inventory
-            let remaining = cost;
-            for (let i = 0; i < inventory.length && remaining > 0; i++) {
-                if (inventory[i].name === 'Wood') {
-                    const subtract = Math.min(remaining, inventory[i].count);
-                    inventory[i].count -= subtract;
-                    remaining -= subtract;
-                    if (inventory[i].count === 0) {
-                        inventory[i] = { icon: '-', count: 0, name: 'empty' };
-                    }
+        function scatterNature() {
+            for (let i = 0; i < 320; i++) {
+                const grass = new THREE.Mesh(
+                    new THREE.PlaneGeometry(0.8, 0.8),
+                    new THREE.MeshBasicMaterial({ color: 0x37b55f, side: THREE.DoubleSide })
+                );
+                grass.position.set((Math.random() - 0.5) * 1500, 0.02, (Math.random() - 0.5) * 1500);
+                grass.rotation.x = -Math.PI / 2;
+                grass.rotation.z = Math.random() * Math.PI;
+                world.add(grass);
+            }
+
+            for (let i = 0; i < 170; i++) {
+                const x = (Math.random() - 0.5) * 1450;
+                const z = (Math.random() - 0.5) * 1450;
+                if (Math.hypot(x, z) < 170) continue;
+                createTree(x, z);
+            }
+
+            for (let i = 0; i < 28; i++) {
+                const x = 280 + Math.random() * 320;
+                const z = 240 + Math.random() * 320;
+                createBerryBush(x, z);
+            }
+
+            for (let i = 0; i < 24; i++) {
+                createOreNode(-640 + Math.random() * 200, -220 + Math.random() * 340);
+            }
+
+            for (let i = 0; i < targetStars; i++) {
+                let x = (Math.random() - 0.5) * 1200;
+                let z = (Math.random() - 0.5) * 1200;
+                if (Math.hypot(x, z) < 160) {
+                    x += 220;
+                    z += 220;
+                }
+                createStar(x, z);
+            }
+        }
+
+        function buildVillage() {
+            createHouse(0, -100, { width: 12, depth: 10, height: 6, wallColor: 0xa36a49, roofColor: 0x563321 });
+            createHouse(70, -40, { width: 10, depth: 9, wallColor: 0xc99864, roofColor: 0x734629 });
+            createHouse(-80, -35, { width: 11, depth: 11, wallColor: 0xb97e56, roofColor: 0x6c4125 });
+            createHouse(95, 60, { width: 10, depth: 10, wallColor: 0xd7a46a, roofColor: 0x7d462f, doorSide: "north" });
+            createHouse(-100, 70, { width: 9, depth: 9, wallColor: 0xb68458, roofColor: 0x623726, doorSide: "north" });
+            createHouse(10, 105, { width: 13, depth: 11, wallColor: 0xc08a5f, roofColor: 0x6b4030, doorSide: "north" });
+            createHouse(-165, 10, { width: 10, depth: 8, wallColor: 0x9c6c47, roofColor: 0x5e3628 });
+            createHouse(165, 8, { width: 10, depth: 8, wallColor: 0xd19a63, roofColor: 0x6c3d2b });
+
+            const fountainBase = new THREE.Mesh(
+                new THREE.CylinderGeometry(18, 22, 3.2, 24),
+                new THREE.MeshStandardMaterial({ color: 0x8b979e, roughness: 0.9 })
+            );
+            fountainBase.position.set(0, 1.6, 0);
+            addObstacle(fountainBase);
+
+            const fountainWater = new THREE.Mesh(
+                new THREE.CylinderGeometry(16, 16, 1.2, 24),
+                new THREE.MeshStandardMaterial({ color: 0x58c9ff, transparent: true, opacity: 0.86 })
+            );
+            fountainWater.position.set(0, 2.5, 0);
+            world.add(fountainWater);
+
+            [[55, 0], [-55, 0], [0, 55], [0, -55], [95, 95], [-95, -95], [95, -95], [-95, 95]]
+                .forEach(([x, z]) => createLampPost(x, z));
+        }
+
+        function buildMine() {
+            const mineGround = new THREE.Mesh(
+                new THREE.CircleGeometry(130, 30),
+                new THREE.MeshStandardMaterial({ color: 0x71634d, roughness: 1 })
+            );
+            mineGround.rotation.x = -Math.PI / 2;
+            mineGround.position.set(-620, 0.06, -120);
+            world.add(mineGround);
+
+            const mountain = new THREE.Mesh(
+                new THREE.ConeGeometry(120, 120, 6),
+                new THREE.MeshStandardMaterial({ color: 0x72706e, roughness: 1 })
+            );
+            mountain.position.set(-620, 60, -140);
+            mountain.castShadow = true;
+            mountain.receiveShadow = true;
+            world.add(mountain);
+
+            const mineEntranceTop = new THREE.Mesh(
+                new THREE.BoxGeometry(22, 12, 2.4),
+                new THREE.MeshStandardMaterial({ color: 0x593b26 })
+            );
+            mineEntranceTop.position.set(-620, 9, -30);
+            addObstacle(mineEntranceTop);
+
+            const leftBeam = new THREE.Mesh(
+                new THREE.BoxGeometry(2.3, 14, 2.3),
+                new THREE.MeshStandardMaterial({ color: 0x593b26 })
+            );
+            leftBeam.position.set(-630, 7, -30);
+            const rightBeam = leftBeam.clone();
+            rightBeam.position.x = -610;
+            addObstacle(leftBeam);
+            addObstacle(rightBeam);
+
+            const tunnel = new THREE.Mesh(
+                new THREE.BoxGeometry(22, 14, 40),
+                new THREE.MeshStandardMaterial({ color: 0x2a2522 })
+            );
+            tunnel.position.set(-620, 7, -52);
+            addObstacle(tunnel);
+        }
+
+        buildVillage();
+        buildMine();
+        scatterNature();
+
+        const wizard = createVillager("Wizard", 0x5c39c4, 4, -118, "Quest giver");
+        const lumberjack = createVillager("Lumberjack", 0xdb6d48, 176, 16, "Wood quest");
+        const miner = createVillager("Miner", 0x6e7b90, -608, -8, "Ore quest");
+        const baker = createVillager("Baker", 0xf2a75a, -138, 68, "Berry quest");
+
+        const playerGroup = new THREE.Group();
+        const bodyParts = new THREE.Group();
+        playerGroup.add(bodyParts);
+
+        const torso = new THREE.Mesh(
+            new THREE.CapsuleGeometry(0.4, 0.7, 4, 10),
+            new THREE.MeshStandardMaterial({ color: 0x293441 })
+        );
+        torso.position.y = 0.7;
+        const head = new THREE.Mesh(
+            new THREE.SphereGeometry(0.32, 16, 16),
+            new THREE.MeshStandardMaterial({ color: 0xf0e4d7 })
+        );
+        head.position.y = 1.45;
+        const hat = new THREE.Mesh(
+            new THREE.ConeGeometry(0.42, 0.76, 14),
+            new THREE.MeshStandardMaterial({ color: 0xc81e68 })
+        );
+        hat.position.y = 1.94;
+        hat.visible = false;
+        bodyParts.add(torso, head, hat);
+        scene.add(playerGroup);
+
+        function resetPlayer() {
+            playerGroup.position.set(0, 1, 170);
+            velocity.set(0, 0, 0);
+        }
+
+        resetPlayer();
+
+        const buildCosts = {
+            wall: 10,
+            lamp: 5,
+            chest: 8,
+            roof: 20,
+            floor: 12,
+            door: 15
+        };
+
+        function getItemCount(itemName) {
+            return inventory.reduce((sum, item) => sum + (item.name === itemName ? item.count : 0), 0);
+        }
+
+        function addItemToInventory(icon, name, amount = 1) {
+            for (let i = 0; i < inventory.length; i++) {
+                if (inventory[i].name === name) {
+                    inventory[i].count += amount;
+                    updateInventoryUI();
+                    return true;
                 }
             }
-            updateInventoryUI();
-            isBuildMenuOpen = false;
-            buildMenu.classList.remove('active');
-            document.body.style.cursor = 'none';
-            document.body.requestPointerLock();
-        } else {
-            alert(`You need ${cost} wood to build this! You have ${woodCount} wood.`);
-        }
-    });
-});
 
-// --- CAMERA & INPUT ---
-let yaw = 0, pitch = 0;
-const keys = {};
-const velocity = new THREE.Vector3();
+            for (let i = 0; i < inventory.length; i++) {
+                if (inventory[i].name === "empty") {
+                    inventory[i] = { icon, name, count: amount };
+                    updateInventoryUI();
+                    return true;
+                }
+            }
 
-window.addEventListener('keydown', (e) => {
-    keys[e.key.toLowerCase()] = true;
-});
-
-window.addEventListener('keyup', (e) => {
-    keys[e.key.toLowerCase()] = false;
-});
-
-window.addEventListener('mousemove', (e) => {
-    if (document.pointerLockElement && !isPaused) {
-        yaw -= e.movementX * 0.002 * gameSensitivity;
-        pitch = Math.max(-Math.PI/3, Math.min(Math.PI/4, pitch + e.movementY * 0.002 * gameSensitivity));
-    }
-});
-
-// --- ANIMATION LOOP ---
-function animate() {
-    requestAnimationFrame(animate);
-    
-    if (isPaused) {
-        renderer.render(scene, camera);
-        return;
-    }
-
-    // Movement
-    const baseSpeed = keys['shift'] ? 0.08 : 0.04;
-    const speed = baseSpeed * gameSpeed;
-    const forward = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
-    const right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
-    
-    if (keys['w'] || keys['arrowup']) velocity.add(forward.clone().multiplyScalar(speed * -1));
-    if (keys['s'] || keys['arrowdown']) velocity.sub(forward.clone().multiplyScalar(speed * -1));
-    if (keys['a']) velocity.sub(right.clone().multiplyScalar(speed));
-    if (keys['d']) velocity.add(right.clone().multiplyScalar(speed));
-    
-
-// Apply gravity
-// === SIMPLE JUMP SYSTEM (PASTE THIS) ===
-
-// Detect if on ground
-let onGround = playerGroup.position.y <= 1.001;
-
-// Jump
-if (keys[' '] && onGround) {
-    velocity.y = 0.18;
-}
-
-// Gravity
-velocity.y -= 0.008;
-
-// Apply movement
-playerGroup.position.add(velocity);
-
-// Ground lock (prevents sinking)
-if (playerGroup.position.y <= 1) {
-    playerGroup.position.y = 1;
-    velocity.y = 0;
-}
-
-// Apply movementx
-playerGroup.position.add(velocity);
-
-// Hard ground lock (no sinking ever)
-if (playerGroup.position.y <= 1) {
-    playerGroup.position.y = 1;
-    velocity.y = 0;
-}
-
-    // Ground collision
-    if (playerGroup.position.y < 1) {
-        playerGroup.position.y = 1;
-        velocity.y = 0;
-    } 
-
-    // Wall Collision
-// Wall Collision (FIXED)
-obstacles.forEach(obj => {
-    const objBox = new THREE.Box3().setFromObject(obj);
-
-    const playerRadius = 0.5;
-
-    const playerPos = playerGroup.position.clone();
-    const flatPlayerPos = new THREE.Vector3(playerPos.x, 0, playerPos.z);
-
-    const closestPoint = objBox.clampPoint(playerPos, new THREE.Vector3());
-    const flatClosest = new THREE.Vector3(closestPoint.x, 0, closestPoint.z);
-
-    const distance = flatPlayerPos.distanceTo(flatClosest);
-
-    if (distance < playerRadius) {
-        const pushDir = flatPlayerPos.clone().sub(flatClosest).normalize();
-        const pushDist = playerRadius - distance;
-
-        playerGroup.position.x += pushDir.x * (pushDist + 0.1);
-        playerGroup.position.z += pushDir.z * (pushDist + 0.1);
-
-        velocity.x = 0;
-        velocity.z = 0;
-    }
-});
-    // Camera follow (3rd person)
-// Optimized Camera follow (3rd person)
-const cameraDistance = 6;
-const cameraHeight = 2.5;
-
-// This math accounts for both rotation (yaw) and looking up/down (pitch)
-const offset = new THREE.Vector3(
-    Math.sin(yaw) * Math.cos(pitch) * cameraDistance,
-    Math.sin(pitch) * cameraDistance + cameraHeight,
-    Math.cos(yaw) * Math.cos(pitch) * cameraDistance
-);
-
-camera.position.copy(playerGroup.position).add(offset);
-camera.lookAt(playerGroup.position.x, playerGroup.position.y + 1.2, playerGroup.position.z);
-    // Update body rotation to face direction
-    bodyParts.rotation.y = yaw;
-
-    // Star collision
-    stars = stars.filter(star => {
-        star.rotation.y += 0.05;
-        if (playerGroup.position.distanceTo(star.position) < 2.5) {
-            scene.remove(star); 
-            starsCollected++;
-            addItemToInventory('⭐', 'Gold Star');
-            counterEl.innerText = `Stars: ${starsCollected} / ${targetStars}`;
+            statusEl.textContent = "Inventory full. Use or turn in items first.";
             return false;
         }
-        return true;
-    });
 
-    // Tree interaction (chopping)
-    if (keys['e'] && lumberjackQuestActive && inventory[currentSlot].name === 'Axe') {
-        const raycaster = new THREE.Raycaster();
-        raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-        const intersected = raycaster.intersectObjects(trees.map(t => t.trunk));
-        if (intersected.length > 0) {
-            const treeIndex = trees.findIndex(t => t.trunk === intersected[0].object);
-            if (treeIndex !== -1) {
-                const tree = trees[treeIndex];
-                tree.health--;
-                tree.foliage.scale.y -= 0.2;
-                tree.foliage.position.y -= 0.5;
-                
-                if (tree.health <= 0) {
-                    scene.remove(tree.trunk);
-                    scene.remove(tree.foliage);
-                    trees.splice(treeIndex, 1);
-                    // Give 5 wood per tree instead of 3
-                    addItemToInventory('🪵', 'Wood');
-                    addItemToInventory('🪵', 'Wood');
-                    addItemToInventory('🪵', 'Wood');
-                    addItemToInventory('🪵', 'Wood');
-                    addItemToInventory('🪵', 'Wood');
-                    woodCollected += 5;
-                    counterEl.innerText = `Wood: ${woodCollected} / ${woodTarget}`;
+        function removeItems(itemName, amount) {
+            let remaining = amount;
+            for (let i = 0; i < inventory.length && remaining > 0; i++) {
+                if (inventory[i].name !== itemName) continue;
+                const used = Math.min(remaining, inventory[i].count);
+                inventory[i].count -= used;
+                remaining -= used;
+                if (inventory[i].count <= 0) inventory[i] = { icon: "-", name: "empty", count: 0 };
+            }
+            updateInventoryUI();
+            return remaining === 0;
+        }
+
+        function updateInventoryUI() {
+            hotbarSlots.forEach((slot, index) => {
+                const item = inventory[index];
+                slot.querySelector(".hotbar-slot-icon").textContent = item.icon;
+                slot.querySelector(".hotbar-slot-name").textContent = item.name === "empty" ? "Empty" : item.name;
+                slot.querySelector(".hotbar-slot-count").textContent = item.count;
+                slot.classList.toggle("active", index === currentSlot);
+            });
+
+            inventoryListEl.innerHTML = "";
+            inventory.filter((item) => item.name !== "empty").forEach((item) => {
+                const row = document.createElement("div");
+                row.className = "inventory-row";
+                row.innerHTML = `<span>${item.icon} ${item.name}</span><span>x${item.count}</span>`;
+                inventoryListEl.appendChild(row);
+            });
+
+            if (!inventoryListEl.children.length) {
+                const row = document.createElement("div");
+                row.className = "inventory-row";
+                row.innerHTML = "<span>Nothing collected yet.</span><span>-</span>";
+                inventoryListEl.appendChild(row);
+            }
+
+            const questBits = [];
+            if (!questState.wizardDone) questBits.push(`Wizard ${questState.starsCollected}/${targetStars}`);
+            if (!questState.lumberDone) questBits.push(`Lumberjack ${questState.woodCollected}/${woodTarget}`);
+            if (!questState.minerDone) questBits.push(`Miner ${questState.oreCollected}/${oreTarget}`);
+            if (!questState.bakerDone) questBits.push(`Baker ${questState.berriesCollected}/${berryTarget}`);
+            questLogEl.textContent = `Quests: ${questBits.join(" | ")}`;
+            counterEl.textContent = `Stars: ${questState.starsCollected} / ${targetStars} | Wood: ${questState.woodCollected} / ${woodTarget} | Ore: ${questState.oreCollected} / ${oreTarget}`;
+        }
+
+        function selectSlot(index) {
+            currentSlot = (index + inventory.length) % inventory.length;
+            updateInventoryUI();
+        }
+
+        hotbarSlots.forEach((slot, index) => {
+            slot.addEventListener("click", () => selectSlot(index));
+        });
+
+        function setPauseState(next) {
+            isPaused = next;
+            pauseMenu.classList.toggle("active", next);
+            if (next) {
+                document.exitPointerLock?.();
+                document.body.style.cursor = "auto";
+            } else if (!isBuildMenuOpen) {
+                document.body.style.cursor = "none";
+                document.body.requestPointerLock();
+            }
+        }
+
+        function setBuildMenuState(next) {
+            isBuildMenuOpen = next;
+            buildMenu.classList.toggle("active", next);
+            if (next) {
+                document.exitPointerLock?.();
+                document.body.style.cursor = "auto";
+            } else if (!isPaused) {
+                document.body.style.cursor = "none";
+                document.body.requestPointerLock();
+            }
+        }
+
+        function updateStatus(text) {
+            statusEl.textContent = text;
+        }
+
+        function placeBuild(type) {
+            const cost = buildCosts[type];
+            const woodCount = getItemCount("Wood");
+            if (woodCount < cost) {
+                updateStatus(`Need ${cost} wood for ${type}. You only have ${woodCount}.`);
+                return;
+            }
+
+            removeItems("Wood", cost);
+            const forward = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw)).multiplyScalar(-8);
+            const placePos = playerGroup.position.clone().add(forward);
+            placePos.y = 1;
+
+            let mesh;
+            const mat = new THREE.MeshStandardMaterial({ color: 0xa36f45 });
+            if (type === "wall") mesh = new THREE.Mesh(new THREE.BoxGeometry(5, 3, 0.7), mat);
+            if (type === "lamp") mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 5, 10), new THREE.MeshStandardMaterial({ color: 0x77818c }));
+            if (type === "chest") mesh = new THREE.Mesh(new THREE.BoxGeometry(2.5, 1.6, 1.6), new THREE.MeshStandardMaterial({ color: 0x8b5a2b }));
+            if (type === "roof") mesh = new THREE.Mesh(new THREE.ConeGeometry(3.4, 2.6, 4), new THREE.MeshStandardMaterial({ color: 0x6a3a28 }));
+            if (type === "floor") mesh = new THREE.Mesh(new THREE.BoxGeometry(4, 0.25, 4), new THREE.MeshStandardMaterial({ color: 0x886345 }));
+            if (type === "door") mesh = new THREE.Mesh(new THREE.BoxGeometry(1.6, 3.2, 0.4), new THREE.MeshStandardMaterial({ color: 0x5e3c22 }));
+
+            mesh.position.copy(placePos);
+            mesh.position.y = type === "roof" ? 2.4 : type === "lamp" ? 2.5 : type === "floor" ? 0.2 : 1.5;
+            mesh.rotation.y = yaw;
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            world.add(mesh);
+            obstacles.push(mesh);
+            placedBuilds.push(mesh);
+            updateStatus(`Built a ${type}.`);
+            setBuildMenuState(false);
+        }
+
+        [...document.querySelectorAll(".build-item")].forEach((item) => {
+            item.addEventListener("click", () => placeBuild(item.dataset.building));
+        });
+
+        document.getElementById("closeBuildMenuBtn").addEventListener("click", () => setBuildMenuState(false));
+        document.getElementById("resumeBtn").addEventListener("click", () => setPauseState(false));
+        document.getElementById("resetBtn").addEventListener("click", () => resetPlayer());
+        document.getElementById("exitBtn").addEventListener("click", () => { window.location.href = "index.html"; });
+
+        const volumeSlider = document.getElementById("volumeSlider");
+        const sensitivitySlider = document.getElementById("sensitivitySlider");
+        const speedSlider = document.getElementById("speedSlider");
+        const fovSlider = document.getElementById("fovSlider");
+        const volumeValue = document.getElementById("volumeValue");
+        const sensitivityValue = document.getElementById("sensitivityValue");
+        const speedValue = document.getElementById("speedValue");
+        const fovValue = document.getElementById("fovValue");
+
+        volumeSlider.addEventListener("input", () => {
+            volumeValue.textContent = `${volumeSlider.value}%`;
+        });
+        sensitivitySlider.addEventListener("input", () => {
+            gameSensitivity = Number(sensitivitySlider.value);
+            sensitivityValue.textContent = `${gameSensitivity.toFixed(1)}x`;
+        });
+        speedSlider.addEventListener("input", () => {
+            gameSpeed = Number(speedSlider.value);
+            speedValue.textContent = `${gameSpeed.toFixed(1)}x`;
+        });
+        fovSlider.addEventListener("input", () => {
+            camera.fov = Number(fovSlider.value);
+            camera.updateProjectionMatrix();
+            fovValue.textContent = `${fovSlider.value}`;
+        });
+
+        function interactWithVillager(name) {
+            if (name === "Wizard") {
+                if (!questState.wizardAccepted) {
+                    if (confirm("Wizard: 'The valley stars are scattered across the realm. Bring me 40 and I'll give you a enchanted hat.'")) {
+                        questState.wizardAccepted = true;
+                        updateStatus("Wizard quest started. Search the whole valley for 40 stars.");
+                    }
+                } else if (questState.starsCollected >= targetStars && !questState.wizardDone) {
+                    alert("Wizard: 'Wonderful work. Wear this hat proudly.'");
+                    questState.wizardDone = true;
+                    questState.hasHat = true;
+                    hat.visible = true;
+                    updateStatus("Wizard quest complete. You earned the village hat.");
+                } else {
+                    alert(`Wizard: 'You have ${questState.starsCollected}/${targetStars} stars so far.'`);
+                }
+            }
+
+            if (name === "Lumberjack") {
+                if (!questState.lumberAccepted) {
+                    if (confirm("Lumberjack: 'I want to expand the village. Bring me 45 wood and take this axe.'")) {
+                        questState.lumberAccepted = true;
+                        questState.hasAxe = true;
+                        addItemToInventory("🪓", "Axe", 1);
+                        updateStatus("Lumberjack quest started. Chop trees for 45 wood.");
+                    }
+                } else if (questState.woodCollected >= woodTarget && !questState.lumberDone) {
+                    questState.lumberDone = true;
+                    removeItems("Wood", woodTarget);
+                    alert("Lumberjack: 'Perfect. The new houses will go up fast with this.'");
+                    updateStatus("Lumberjack quest complete.");
+                } else {
+                    alert(`Lumberjack: 'Wood stack is ${questState.woodCollected}/${woodTarget}. Keep going.'`);
+                }
+            }
+
+            if (name === "Miner") {
+                if (!questState.minerAccepted) {
+                    if (confirm("Miner: 'The cave needs fresh iron. Bring me 12 ore and this pickaxe is yours.'")) {
+                        questState.minerAccepted = true;
+                        questState.hasPickaxe = true;
+                        addItemToInventory("⛏️", "Pickaxe", 1);
+                        updateStatus("Miner quest started. Search the mine for ore.");
+                    }
+                } else if (questState.oreCollected >= oreTarget && !questState.minerDone) {
+                    questState.minerDone = true;
+                    removeItems("Ore", oreTarget);
+                    alert("Miner: 'Excellent haul. The forge will roar tonight.'");
+                    updateStatus("Miner quest complete.");
+                } else {
+                    alert(`Miner: 'Ore collected: ${questState.oreCollected}/${oreTarget}.'`);
+                }
+            }
+
+            if (name === "Baker") {
+                if (!questState.bakerAccepted) {
+                    if (confirm("Baker: 'Could you gather 10 berry baskets for the market? The orchard is east of town.'")) {
+                        questState.bakerAccepted = true;
+                        updateStatus("Baker quest started. Gather 10 berries from bushes.");
+                    }
+                } else if (questState.berriesCollected >= berryTarget && !questState.bakerDone) {
+                    questState.bakerDone = true;
+                    removeItems("Berry", berryTarget);
+                    alert("Baker: 'These pies are going to be legendary. Thank you!'");
+                    updateStatus("Baker quest complete.");
+                } else {
+                    alert(`Baker: 'You have ${questState.berriesCollected}/${berryTarget} berries.'`);
+                }
+            }
+
+            updateInventoryUI();
+        }
+
+        function interact() {
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+            const villagerHit = raycaster.intersectObjects(talkables, true)[0];
+            if (villagerHit) {
+                let root = villagerHit.object;
+                while (root && !root.userData?.name) root = root.parent;
+                if (root?.userData?.name) interactWithVillager(root.userData.name);
+                return;
+            }
+
+            const selectedName = inventory[currentSlot].name;
+            if (selectedName === "Axe") {
+                const treeHits = raycaster.intersectObjects(trees.map((tree) => tree.trunk))[0];
+                if (treeHits) {
+                    const tree = trees.find((entry) => entry.trunk === treeHits.object);
+                    tree.health -= 1;
+                    tree.foliage.scale.y = Math.max(0.2, tree.foliage.scale.y - 0.22);
+                    tree.foliage.position.y -= 0.45;
+                    updateStatus("You chop into the tree.");
+                    if (tree.health <= 0) {
+                        world.remove(tree.trunk);
+                        world.remove(tree.foliage);
+                        obstacles.splice(obstacles.indexOf(tree.trunk), 1);
+                        trees.splice(trees.indexOf(tree), 1);
+                        addItemToInventory("🪵", "Wood", 5);
+                        questState.woodCollected += 5;
+                        updateStatus("Tree down. Collected 5 wood.");
+                        updateInventoryUI();
+                    }
+                    return;
+                }
+            }
+
+            if (selectedName === "Pickaxe") {
+                const oreHits = raycaster.intersectObjects(oreNodes.map((node) => node.mesh))[0];
+                if (oreHits) {
+                    const node = oreNodes.find((entry) => entry.mesh === oreHits.object);
+                    node.health -= 1;
+                    node.mesh.scale.multiplyScalar(0.88);
+                    updateStatus("You chip away at the ore.");
+                    if (node.health <= 0) {
+                        world.remove(node.mesh);
+                        obstacles.splice(obstacles.indexOf(node.mesh), 1);
+                        oreNodes.splice(oreNodes.indexOf(node), 1);
+                        addItemToInventory("🪨", "Ore", 3);
+                        questState.oreCollected += 3;
+                        updateStatus("Ore vein mined. Collected 3 ore.");
+                        updateInventoryUI();
+                    }
+                    return;
+                }
+            }
+
+            const berryHit = raycaster.intersectObjects(animatedPickups.filter((obj) => obj.userData.type === "berry" && !obj.userData.collected))[0];
+            if (berryHit && berryHit.distance < 8) {
+                berryHit.object.userData.collected = true;
+                world.remove(berryHit.object);
+                addItemToInventory("🫐", "Berry", 1);
+                questState.berriesCollected += 1;
+                updateStatus("Collected a berry.");
+                updateInventoryUI();
+            }
+        }
+
+        window.addEventListener("keydown", (event) => {
+            const key = event.key.toLowerCase();
+            keys[key] = true;
+
+            if (key === "escape") {
+                event.preventDefault();
+                if (isBuildMenuOpen) setBuildMenuState(false);
+                else setPauseState(!isPaused);
+                return;
+            }
+
+            if (key === "b" && !isPaused) {
+                setBuildMenuState(!isBuildMenuOpen);
+                return;
+            }
+
+            if (key === "e" && !isPaused && !isBuildMenuOpen) {
+                interact();
+                return;
+            }
+
+            const num = Number.parseInt(key, 10);
+            if (num >= 1 && num <= inventory.length && !isPaused) {
+                selectSlot(num - 1);
+            }
+        });
+
+        window.addEventListener("keyup", (event) => {
+            keys[event.key.toLowerCase()] = false;
+        });
+
+        window.addEventListener("wheel", (event) => {
+            if (isPaused || isBuildMenuOpen) return;
+            event.preventDefault();
+            selectSlot(currentSlot + (event.deltaY > 0 ? 1 : -1));
+        }, { passive: false });
+
+        window.addEventListener("mousemove", (event) => {
+            if (document.pointerLockElement !== document.body || isPaused || isBuildMenuOpen) return;
+            yaw -= event.movementX * 0.002 * gameSensitivity;
+            pitch = THREE.MathUtils.clamp(pitch + event.movementY * 0.002 * gameSensitivity, -Math.PI / 3, Math.PI / 4);
+        });
+
+        window.addEventListener("mousedown", () => {
+            if (isPaused || isBuildMenuOpen) return;
+            if (document.pointerLockElement !== document.body) {
+                document.body.requestPointerLock();
+                document.body.style.cursor = "none";
+            }
+        });
+
+        window.addEventListener("resize", () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        function resolveCollisions() {
+            const playerPos = playerGroup.position.clone();
+            const flatPlayer = new THREE.Vector3(playerPos.x, 0, playerPos.z);
+
+            obstacles.forEach((obj) => {
+                const box = new THREE.Box3().setFromObject(obj);
+                const closest = box.clampPoint(playerPos, new THREE.Vector3());
+                const flatClosest = new THREE.Vector3(closest.x, 0, closest.z);
+                const distance = flatPlayer.distanceTo(flatClosest);
+                if (distance < playerRadius) {
+                    const pushDir = flatPlayer.clone().sub(flatClosest);
+                    if (pushDir.lengthSq() < 0.0001) pushDir.set(1, 0, 0);
+                    pushDir.normalize();
+                    const pushAmount = playerRadius - distance + 0.06;
+                    playerGroup.position.x += pushDir.x * pushAmount;
+                    playerGroup.position.z += pushDir.z * pushAmount;
+                    velocity.x = 0;
+                    velocity.z = 0;
+                }
+            });
+        }
+
+        function collectNearbyStars() {
+            for (let i = stars.length - 1; i >= 0; i--) {
+                const star = stars[i];
+                if (playerGroup.position.distanceTo(star.position) < 2.2) {
+                    world.remove(star);
+                    stars.splice(i, 1);
+                    questState.starsCollected += 1;
+                    addItemToInventory("⭐", "Gold Star", 1);
+                    updateStatus("Collected a gold star.");
+                    updateInventoryUI();
                 }
             }
         }
-    }
 
-    // Friction
-    velocity.x *= 0.85;
-    velocity.z *= 0.85;
+        function animate() {
+            requestAnimationFrame(animate);
 
-    renderer.render(scene, camera);
-}
+            if (!isPaused && !isBuildMenuOpen) {
+                const baseSpeed = keys["shift"] ? 0.095 : 0.055;
+                const moveSpeed = baseSpeed * gameSpeed;
 
-animate();
-document.body.requestPointerLock();
+                const forward = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
+                const right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
+
+                if (keys["w"] || keys["arrowup"]) velocity.add(forward.clone().multiplyScalar(-moveSpeed));
+                if (keys["s"] || keys["arrowdown"]) velocity.add(forward.clone().multiplyScalar(moveSpeed));
+                if (keys["a"] || keys["arrowleft"]) velocity.add(right.clone().multiplyScalar(-moveSpeed));
+                if (keys["d"] || keys["arrowright"]) velocity.add(right.clone().multiplyScalar(moveSpeed));
+
+                const onGround = playerGroup.position.y <= 1.001;
+                if (keys[" "] && onGround) velocity.y = 0.19;
+
+                velocity.y -= 0.0085;
+                playerGroup.position.add(velocity);
+
+                if (playerGroup.position.y < 1) {
+                    playerGroup.position.y = 1;
+                    velocity.y = 0;
+                }
+
+                resolveCollisions();
+                collectNearbyStars();
+
+                velocity.x *= 0.84;
+                velocity.z *= 0.84;
+
+                bodyParts.rotation.y = yaw + Math.PI;
+
+                if (playerGroup.position.x > worldSize / 2 - 10) playerGroup.position.x = worldSize / 2 - 10;
+                if (playerGroup.position.x < -worldSize / 2 + 10) playerGroup.position.x = -worldSize / 2 + 10;
+                if (playerGroup.position.z > worldSize / 2 - 10) playerGroup.position.z = worldSize / 2 - 10;
+                if (playerGroup.position.z < -worldSize / 2 + 10) playerGroup.position.z = -worldSize / 2 + 10;
+            }
+
+            const time = performance.now() * 0.001;
+            animatedPickups.forEach((item, index) => {
+                if (!item.parent) return;
+                item.rotation.y += 0.02;
+                item.position.y = item.userData.baseY + Math.sin(time * 2 + index) * 0.18;
+            });
+
+            const cameraDistance = 7.2;
+            const cameraHeight = 2.9;
+            const offset = new THREE.Vector3(
+                Math.sin(yaw) * Math.cos(pitch) * cameraDistance,
+                Math.sin(pitch) * cameraDistance + cameraHeight,
+                Math.cos(yaw) * Math.cos(pitch) * cameraDistance
+            );
+
+            camera.position.copy(playerGroup.position).add(offset);
+            camera.lookAt(playerGroup.position.x, playerGroup.position.y + 1.4, playerGroup.position.z);
+
+            renderer.render(scene, camera);
+        }
+
+        updateInventoryUI();
+        selectSlot(0);
+        document.body.requestPointerLock();
+        document.body.style.cursor = "none";
+        animate();
     </script>
 </body>
 </html>
