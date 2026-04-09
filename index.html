@@ -4,146 +4,1318 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Voxy's Arcade Hub</title>
+    <meta name="description" content="Voxy's Arcade Hub is a neon browser arcade with featured picks, favorites, and fast-launch games in one place.">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Voxy's Arcade Hub">
+    <meta property="og:description" content="Jump into a neon arcade lobby packed with action, puzzle, multiplayer, and idle browser games.">
+    <meta property="og:url" content="https://voxyhyde.github.io/">
+    <meta property="og:image" content="https://voxyhyde.github.io/background.png">
+    <meta property="og:image:alt" content="Voxy's Arcade Hub neon background">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
+    <link rel="shortcut icon" href="/favicon.ico">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Voxy's Arcade Hub">
+    <meta name="twitter:description" content="Featured games, favorites, and a retro arcade-style browser game hub.">
+    <meta name="twitter:image" content="https://voxyhyde.github.io/background.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
-        /* Retro Color Palette */
+        :root {
+            --bg: #07111f;
+            --panel: rgba(10, 17, 31, 0.88);
+            --panel-soft: rgba(13, 22, 39, 0.82);
+            --text: #f7fbff;
+            --muted: #9fb0ca;
+            --cyan: #5ef2ff;
+            --lime: #c7ff5e;
+            --orange: #ffb25e;
+            --pink: #ff5edb;
+            --shadow: 0 18px 54px rgba(0, 0, 0, 0.34);
+            --radius: 24px;
+            --max-width: 1240px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
         body {
-            background-color: #1a1a1a;
-            color: #ffffff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
-            padding: 0;
-            background-image: url(background.png);
-            background-size: cover;
-            background-attachment: fixed;
+            color: var(--text);
+            font-family: "Orbitron", "Trebuchet MS", sans-serif;
+            position: relative;
+            background:
+                linear-gradient(180deg, rgba(5, 12, 23, 0.38), rgba(5, 12, 23, 0.94)),
+                radial-gradient(circle at top left, rgba(255, 94, 219, 0.14), transparent 28%),
+                radial-gradient(circle at top right, rgba(94, 242, 255, 0.18), transparent 30%),
+                url("background.png") center top / cover no-repeat,
+                var(--bg);
+            min-height: 100vh;
+            overflow-x: hidden;
         }
 
-        header {
-            background-color: #000;
-            padding: 20px;
-            text-align: center;
-            border-bottom: 3px solid #32CD32; /* Lime Green accent */
+        body::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background:
+                linear-gradient(180deg, rgba(3, 8, 17, 0.1) 0%, rgba(3, 8, 17, 0.34) 40%, rgba(3, 8, 17, 0.7) 100%),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: auto, 56px 56px, 56px 56px;
+            mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.2));
+            opacity: 0.4;
+            z-index: -1;
         }
 
-        h1 {
+        a {
+            color: inherit;
+        }
+
+        button,
+        input {
+            font: inherit;
+        }
+
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            padding: 16px 20px;
+            background: rgba(3, 7, 16, 0.88);
+            border-bottom: 1px solid rgba(94, 242, 255, 0.12);
+        }
+
+        .topbar-inner {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 18px;
+            align-items: center;
+        }
+
+        .brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .brand-mark {
+            width: 44px;
+            height: 44px;
+            display: grid;
+            place-items: center;
+            border-radius: 14px;
+            background: linear-gradient(135deg, rgba(94, 242, 255, 0.24), rgba(255, 94, 219, 0.24));
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 18px rgba(94, 242, 255, 0.18);
+            font-family: "Press Start 2P", monospace;
+            font-size: 0.8rem;
+        }
+
+        .brand-copy strong,
+        .section-title,
+        .eyebrow,
+        .featured-label {
+            font-family: "Press Start 2P", monospace;
+        }
+
+        .brand-copy strong {
+            display: block;
+            font-size: 0.68rem;
+            letter-spacing: 0.08em;
+            line-height: 1.4;
+        }
+
+        .brand-copy span {
+            display: block;
+            margin-top: 4px;
+            color: var(--muted);
+            font-size: 0.8rem;
+        }
+
+        .nav-links {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .nav-links a,
+        .chip,
+        .ghost-button {
+            min-height: 42px;
+            padding: 10px 14px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text);
+            transition: transform 180ms ease, border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+            cursor: pointer;
+        }
+
+        .nav-links a:hover,
+        .chip:hover,
+        .chip.active,
+        .ghost-button:hover,
+        .play-button:hover,
+        .icon-button:hover {
+            transform: translateY(-2px);
+            border-color: rgba(94, 242, 255, 0.28);
+            background: rgba(94, 242, 255, 0.12);
+            box-shadow: 0 10px 26px rgba(0, 0, 0, 0.22);
+        }
+
+        .topbar-actions {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        main {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            padding: 28px 20px 80px;
+        }
+
+        .hero {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 24px;
+            margin-top: 12px;
+        }
+
+        .hero-copy,
+        .featured-card,
+        .toolbar,
+        .favorites-panel,
+        .leaderboard-panel,
+        .spotlight-panel,
+        .card {
+            background: linear-gradient(180deg, rgba(13, 23, 43, 0.92), rgba(7, 14, 28, 0.92));
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-copy,
+        .toolbar,
+        .favorites-panel,
+        .leaderboard-panel,
+        .spotlight-panel {
+            padding: 24px;
+        }
+
+        .hero-copy::after,
+        .featured-card::after,
+        .favorites-panel::after,
+        .leaderboard-panel::after,
+        .spotlight-panel::after,
+        .card::after {
+            content: "";
+            position: absolute;
+            right: -50px;
+            bottom: -70px;
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(94, 242, 255, 0.14), transparent 70%);
+            pointer-events: none;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--lime);
+            font-size: 0.62rem;
+            letter-spacing: 0.08em;
+            margin-bottom: 18px;
+        }
+
+        .eyebrow::before {
+            content: "";
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--lime);
+            box-shadow: 0 0 18px rgba(199, 255, 94, 0.55);
+        }
+
+        .hero h1 {
             margin: 0;
-            letter-spacing: 2px;
-            color: #32CD32;
+            font-size: clamp(2.5rem, 5vw, 4.6rem);
+            line-height: 0.96;
+            letter-spacing: 0.04em;
             text-transform: uppercase;
         }
 
-        /* The Grid Container */
+        .hero p,
+        .section-copy,
+        .featured-copy {
+            color: #d7e0f4;
+            line-height: 1.7;
+        }
+
+        .hero p {
+            margin: 18px 0 0;
+            max-width: 60ch;
+        }
+
+        .hero-stats {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 14px;
+            margin-top: 24px;
+        }
+
+        .stat {
+            padding: 16px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .stat strong {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 1.45rem;
+            color: var(--cyan);
+        }
+
+        .stat span {
+            color: var(--muted);
+            font-size: 0.84rem;
+        }
+
+        .hero-actions,
+        .card-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 24px;
+        }
+
+        .play-button,
+        .icon-button {
+            border: none;
+            cursor: pointer;
+            transition: transform 180ms ease, background 180ms ease, box-shadow 180ms ease;
+        }
+
+        .play-button {
+            min-height: 48px;
+            padding: 0 18px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            color: #03111c;
+            text-decoration: none;
+            background: linear-gradient(135deg, var(--lime), var(--cyan));
+            box-shadow: 0 16px 34px rgba(94, 242, 255, 0.2);
+            font-weight: 800;
+        }
+
+        .icon-button {
+            width: 44px;
+            height: 44px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .icon-button.is-active {
+            background: linear-gradient(135deg, #ffd36f, var(--orange));
+            color: #03111c;
+            border-color: transparent;
+        }
+
+        .section-head {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            gap: 16px;
+            margin: 38px 0 16px;
+        }
+
+        .section-title {
+            margin: 0;
+            font-size: 0.9rem;
+            letter-spacing: 0.08em;
+        }
+
+        .toolbar {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 18px;
+        }
+
+        .search-wrap {
+            position: relative;
+        }
+
+        .search-wrap input {
+            width: 100%;
+            min-height: 54px;
+            padding: 0 20px 0 54px;
+            border-radius: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text);
+        }
+
+        .search-wrap::before {
+            content: "⌕";
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--muted);
+        }
+
+        .filters {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .featured-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 20px;
+        }
+
+        .featured-card {
+            min-height: 100%;
+            animation: featuredPulse 3.8s ease-in-out infinite;
+        }
+
+        @keyframes featuredPulse {
+            0%, 100% { box-shadow: 0 0 0 1px rgba(94, 242, 255, 0.08), 0 18px 54px rgba(0, 0, 0, 0.34); }
+            50% { box-shadow: 0 0 0 1px rgba(94, 242, 255, 0.22), 0 22px 68px rgba(0, 0, 0, 0.4); }
+        }
+
+        .featured-art {
+            position: relative;
+            aspect-ratio: 1 / 1;
+            overflow: hidden;
+        }
+
+        .featured-art img,
+        .card-media img {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: cover;
+        }
+
+        .featured-art::after,
+        .card-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(5, 10, 20, 0.06) 12%, rgba(5, 10, 20, 0.9) 100%);
+        }
+
+        .featured-card-body {
+            padding: 18px;
+        }
+
+        .featured-label,
+        .badge,
+        .meta-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 11px;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .featured-label {
+            color: #03111c;
+            background: linear-gradient(135deg, var(--orange), #ffd46b);
+            font-size: 0.56rem;
+            letter-spacing: 0.08em;
+        }
+
+        .badge,
+        .meta-pill {
+            background: rgba(3, 10, 24, 0.66);
+            color: #eef5ff;
+        }
+
+        .meta-pill {
+            color: var(--muted);
+        }
+
+        .badge-row,
+        .meta-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .featured-card h2,
+        .card-title {
+            margin: 14px 0 8px;
+        }
+
+        .featured-rotation {
+            margin-top: 12px;
+            color: var(--muted);
+            font-size: 0.82rem;
+        }
+
+        .favorites-grid,
         .game-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 20px;
-            padding: 40px;
-            max-width: 1200px;
-            margin: 0 auto;
+            gap: 18px;
         }
 
-        /* Individual Game Card */
-        .game-card {
-            background-color: #2a2a2a;
-            border-radius: 8px;
-            overflow: hidden;
-            transition: transform 0.2s, border 0.2s;
-            border: 2px solid transparent;
-            text-align: center;
-            cursor: pointer;
+        .favorites-grid {
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        }
+
+        .game-grid {
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            margin-top: 20px;
+        }
+
+        .card {
+            transform-style: preserve-3d;
+            transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+            will-change: transform;
+        }
+
+        .card:hover {
+            transform: translateY(-8px) scale(1.01);
+            border-color: rgba(94, 242, 255, 0.24);
+            box-shadow: 0 0 0 1px rgba(94, 242, 255, 0.14), 0 22px 60px rgba(0, 0, 0, 0.4);
+        }
+
+        .card-link {
+            display: block;
+            color: inherit;
             text-decoration: none;
-            display: block;
         }
 
-        .game-card:hover {
-            transform: scale(1.05);
-            border: 2px solid #32CD32;
-            background-color: #333;
+        .card-media {
+            position: relative;
+            aspect-ratio: 1 / 1;
+            overflow: hidden;
         }
 
-        .game-card img {
-            width: 100%;
-            aspect-ratio: 1/1;
-            object-fit: cover;
-            display: block;
+        .card-media img {
+            transition: transform 260ms ease, filter 260ms ease;
         }
 
-        .game-title {
-            padding: 10px;
-            font-weight: bold;
-            font-size: 0.9rem;
-            color: #eee;
+        .card:hover .card-media img {
+            transform: scale(1.08);
+            filter: saturate(1.05);
         }
 
-        footer {
+        .card-overlay {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding: 18px;
+            opacity: 0;
+            transition: opacity 220ms ease;
+        }
+
+        .card:hover .card-overlay,
+        .card:focus-within .card-overlay {
+            opacity: 1;
+        }
+
+        .card-body {
+            padding: 16px;
+        }
+
+        .card-topline,
+        .leader-row {
+            display: flex;
+            align-items: start;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .card-subtitle {
+            min-height: 2.6em;
+            margin: 8px 0 12px;
+            color: var(--muted);
+            font-size: 0.83rem;
+            line-height: 1.55;
+        }
+
+        .card-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .score {
+            color: var(--orange);
+            font-weight: 700;
+            font-size: 0.84rem;
+        }
+
+        .continue-grid {
+            display: grid;
+            grid-auto-flow: column;
+            grid-auto-columns: minmax(220px, 280px);
+            gap: 16px;
+            overflow-x: auto;
+            padding-bottom: 6px;
+            scroll-snap-type: x proximity;
+        }
+
+        .continue-grid > * {
+            scroll-snap-align: start;
+        }
+
+        .continue-grid::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .continue-grid::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.16);
+            border-radius: 999px;
+        }
+
+        .favorites-grid .card,
+        .continue-grid .card {
+            min-height: 100%;
+        }
+
+        .loading-note,
+        .empty-state {
+            padding: 22px;
+            border-radius: 18px;
             text-align: center;
-            padding: 20px;
-            font-size: 0.8rem;
-            color: #666;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px dashed rgba(255, 255, 255, 0.14);
+            color: var(--muted);
+        }
+
+        .skeleton {
+            min-height: 350px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.05);
+            position: relative;
+        }
+
+        .skeleton::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            transform: translateX(-100%);
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            100% { transform: translateX(100%); }
+        }
+
+        .spotlight-grid,
+        .leaderboard-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .spotlight-item,
+        .leader-row {
+            padding: 16px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .spotlight-item strong,
+        .leader-row strong {
+            color: var(--cyan);
+        }
+
+        .footer {
+            margin-top: 42px;
+            text-align: center;
+            color: var(--muted);
+            font-size: 0.82rem;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            display: grid;
+            place-items: center;
+            background: radial-gradient(circle at center, rgba(7, 18, 33, 0.8), rgba(2, 6, 14, 0.96));
+            transition: opacity 320ms ease, visibility 320ms ease;
+        }
+
+        .loading-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .loading-box {
+            width: min(92vw, 520px);
+            padding: 26px;
+            border-radius: 24px;
+            background: rgba(12, 18, 34, 0.94);
+            border: 1px solid rgba(94, 242, 255, 0.16);
+            text-align: center;
+            box-shadow: 0 18px 56px rgba(0, 0, 0, 0.42);
+        }
+
+        .loading-box strong {
+            display: block;
+            color: var(--cyan);
+            font-family: "Press Start 2P", monospace;
+            font-size: 0.76rem;
+            line-height: 1.7;
+        }
+
+        .loading-bar {
+            height: 12px;
+            margin-top: 18px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+            overflow: hidden;
+        }
+
+        .loading-bar span {
+            display: block;
+            width: 45%;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(135deg, var(--cyan), var(--lime));
+            animation: loadingShift 1.2s ease-in-out infinite;
+        }
+
+        @keyframes loadingShift {
+            0% { transform: translateX(-110%); }
+            100% { transform: translateX(240%); }
+        }
+
+        @media (max-width: 1024px) {
+            .topbar-inner,
+            .toolbar,
+            .featured-grid,
+            .spotlight-grid,
+            .leaderboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-links,
+            .filters,
+            .topbar-actions {
+                justify-content: flex-start;
+            }
+        }
+
+        @media (max-width: 720px) {
+            .topbar {
+                padding: 14px;
+            }
+
+            main {
+                padding: 18px 14px 60px;
+            }
+
+            .hero-copy,
+            .toolbar,
+            .favorites-panel,
+            .leaderboard-panel,
+            .spotlight-panel {
+                padding: 18px;
+            }
+
+            .hero-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .continue-grid {
+                grid-auto-columns: 85%;
+            }
+
+            .game-grid,
+            .favorites-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            html {
+                scroll-behavior: auto;
+            }
+
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
         }
     </style>
 </head>
 <body>
-
-<header>
-    <h1>Arcade Hub</h1>
-</header>
-
-<div class="game-grid">
-    <a href="3dgame.html" class="game-card">
-        <img src="spacerocket.png" alt="Space rocket shooter">
-        <div class="game-title">Space Rocket</div>
-    </a>
-
-    <a href="1p.html" class="game-card">
-        <img src="neonsurvivor.png" alt="Neon Survivor">
-        <div class="game-title">Neon Survivor</div>
-    </a>
-
-    <a href="rpg.html" class="game-card">
-        <img src="RPG.png" alt="RPG game">
-        <div class="game-title">RPG farmer</div>
-    </a>
-        <a href="jumpahhgame.html" class="game-card">
-        <img src="jumpgame.png" alt="AI Game">
-        <div class="game-title">Jumper Game</div>
-    </a>
-    <a href="minesweeper.html" class="game-card">
-        <img src="minesweeper.png" alt="Minesweeper">
-        <div class="game-title">Minesweeper</div>
-    </a>
-    <a href="dual.html" class="game-card">
-        <img src="dual.png" alt="Co-op Game">
-        <div class="game-title">Co-op Game</div>
-    </a>
-        <a href="drift.html" class="game-card">
-        <img src="drift.png" alt="drift Game">
-        <div class="game-title">Drifter</div>
-    </a>
-        <a href="spaceshipper.html" class="game-card">
-        <img src="dualspaceship.png" alt="Spacship for a great duo">
-        <div class="game-title">Spaceship for two</div>
-    </a>
-        <a href="Tycoon.html" class="game-card">
-        <img src="tycoon.png" alt="Tycoon Game">
-        <div class="game-title">Tycoon clicker</div>
-    </a>
-        <a href="3d2.html" class="game-card">
-        <img src="3dbase.png" alt="3D Game">
-        <div class="game-title">3D playground</div>
-    </a>
-    <a href="slope.html" class="game-card">
-        <img src="avoidit.png" alt="Slope Game">
-        <div class="game-title">Avoid-it!</div>
-    </a>
-    <a href="last.html" class="game-card">
-        <img src="pulsepit.png" alt="Pulse Pit arena game">
-        <div class="game-title">Pulse Pit</div>
-    </a>
+    <div class="loading-overlay" id="loadingOverlay" aria-live="polite">
+        <div class="loading-box">
+            <strong>LOADING ARCADE LOBBY...</strong>
+            <p class="section-copy">Warming up the cabinets.</p>
+            <div class="loading-bar" aria-hidden="true"><span></span></div>
+        </div>
     </div>
 
-<footer>
-    2026 AI Arcade Hub
-</footer>
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a class="brand" href="#top" aria-label="Voxy Arcade home">
+                <span class="brand-mark">VX</span>
+                <span class="brand-copy">
+                    <strong>Voxy Arcade</strong>
+                    <span>Fast games, bright lights.</span>
+                </span>
+            </a>
 
+            <nav class="nav-links" aria-label="Primary">
+                <a href="#featured">Featured</a>
+                <a href="#favorites">Favorites</a>
+                <a href="#games">Games</a>
+                <a href="#leaderboards">Leaderboard</a>
+            </nav>
+
+            <div class="topbar-actions">
+                <button class="ghost-button" type="button" id="favoritesShortcut">Jump to Favorites</button>
+            </div>
+        </div>
+    </header>
+
+    <main id="top">
+        <section class="hero">
+            <div class="hero-copy">
+                <div class="eyebrow">Arcade Lobby</div>
+                <h1>Pick a cabinet and hit play.</h1>
+                <p>
+                    A cleaner, punchier front page built for browsing fast: square covers, daily featured picks,
+                    quick search, category filters, favorites saved in your browser, and a leaderboard section that
+                    lives on its own instead of crowding the game wall.
+                </p>
+
+                <div class="hero-stats">
+                    <div class="stat">
+                        <strong id="gameCount">12</strong>
+                        <span>Games ready to play</span>
+                    </div>
+                    <div class="stat">
+                        <strong id="favoriteCount">0</strong>
+                        <span>Favorites saved on this device</span>
+                    </div>
+                    <div class="stat">
+                        <strong id="featuredDay">Day</strong>
+                        <span>Fresh featured pair</span>
+                    </div>
+                </div>
+
+                <div class="hero-actions">
+                    <a class="play-button sound-trigger" href="#featured">See Featured Games</a>
+                    <a class="ghost-button sound-trigger" href="#games">Browse All Games</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="featured" aria-labelledby="featured-title">
+            <div class="section-head">
+                <div>
+                    <h2 class="section-title" id="featured-title">Featured Today</h2>
+                    <p class="section-copy">Two spotlight picks rotate automatically based on the date.</p>
+                </div>
+            </div>
+            <div class="featured-grid" id="featuredGrid"></div>
+        </section>
+
+        <section aria-labelledby="continue-title">
+            <div class="section-head">
+                <div>
+                    <h2 class="section-title" id="continue-title">Continue Playing</h2>
+                    <p class="section-copy">Your latest launches stay close by for easy reruns.</p>
+                </div>
+            </div>
+            <div class="continue-grid" id="continuePlaying"></div>
+        </section>
+
+        <section id="favorites" aria-labelledby="favorites-title">
+            <div class="section-head">
+                <div>
+                    <h2 class="section-title" id="favorites-title">Favorites</h2>
+                    <p class="section-copy">Star any cabinet and it shows up here instantly.</p>
+                </div>
+            </div>
+            <div class="favorites-panel">
+                <div class="favorites-grid" id="favoritesGrid"></div>
+            </div>
+        </section>
+
+        <section id="games" aria-labelledby="games-title">
+            <div class="section-head">
+                <div>
+                    <h2 class="section-title" id="games-title">Game Grid</h2>
+                    <p class="section-copy">Search the lineup, filter by category, and launch straight from the shelf.</p>
+                </div>
+            </div>
+
+            <div class="toolbar">
+                <label class="search-wrap" for="searchInput">
+                    <input id="searchInput" type="search" placeholder="Search games, genre, difficulty..." autocomplete="off">
+                </label>
+                <div class="filters" id="filterChips" aria-label="Category filters"></div>
+            </div>
+
+            <div class="loading-note" id="resultsCount">Loading games...</div>
+            <div class="game-grid" id="gameGrid" aria-live="polite">
+                <article class="card skeleton"></article>
+                <article class="card skeleton"></article>
+                <article class="card skeleton"></article>
+                <article class="card skeleton"></article>
+            </div>
+        </section>
+
+        <section aria-labelledby="spotlight-title">
+            <div class="section-head">
+                <div>
+                    <h2 class="section-title" id="spotlight-title">Arcade Highlights</h2>
+                    <p class="section-copy">A few extra hooks to make the hub feel more like a place than a list.</p>
+                </div>
+            </div>
+            <div class="spotlight-panel">
+                <div class="spotlight-grid">
+                    <div class="spotlight-item">
+                        <strong>Daily pair</strong>
+                        <p class="section-copy">Featured cabinets swap by date without needing a server.</p>
+                    </div>
+                    <div class="spotlight-item">
+                        <strong>Quick favorites</strong>
+                        <p class="section-copy">The stars save to local browser storage, so your shelf sticks around on the same device.</p>
+                    </div>
+                    <div class="spotlight-item">
+                        <strong>Lower-power backdrop</strong>
+                        <p class="section-copy">The background stays static while you scroll for a calmer, lighter page.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="leaderboards" aria-labelledby="leaderboards-title">
+            <div class="section-head">
+                <div>
+                    <h2 class="section-title" id="leaderboards-title">Leaderboard</h2>
+                    <p class="section-copy">A separate section at the end, ready for real scores later if you ever want them.</p>
+                </div>
+            </div>
+            <div class="leaderboard-panel">
+                <div class="leaderboard-grid">
+                    <div class="leader-row"><span>PixelPilot</span><strong>12,400</strong></div>
+                    <div class="leader-row"><span>VoidRunner</span><strong>10,980</strong></div>
+                    <div class="leader-row"><span>VoxyFan99</span><strong>9,770</strong></div>
+                </div>
+            </div>
+        </section>
+
+        <footer class="footer">2026 Voxy's AI Arcade Hub</footer>
+    </main>
+
+    <script>
+        const games = [
+            { id: "space-rocket", title: "Space Rocket", href: "3dgame.html", image: "spacerocket.png", alt: "Space Rocket shooter", genre: "Action", rating: 4.7, playtime: "8 min", difficulty: "Medium", popularity: "Hot streak", description: "Arcade blasting with quick reflex pressure and space-lane chaos." },
+            { id: "neon-survivor", title: "Neon Survivor", href: "1p.html", image: "neonsurvivor.png", alt: "Neon Survivor", genre: "Action", rating: 4.8, playtime: "12 min", difficulty: "Hard", popularity: "Crowd pick", description: "Survive glowing waves while the arena turns up the pressure." },
+            { id: "rpg-farmer", title: "RPG Farmer", href: "rpg.html", image: "RPG.png", alt: "RPG farmer", genre: "Idle", rating: 4.9, playtime: "45 min", difficulty: "Easy", popularity: "Harvest run", description: "Farm, level up, and settle into an easygoing grind loop." },
+            { id: "jumper-game", title: "Jumper Game", href: "jumpahhgame.html", image: "jumpgame.png", alt: "Jumper game", genre: "Action", rating: 4.4, playtime: "6 min", difficulty: "Medium", popularity: "Quick play", description: "Short-hop arcade energy with instant restart appeal." },
+            { id: "minesweeper", title: "Minesweeper", href: "minesweeper.html", image: "minesweeper.png", alt: "Minesweeper", genre: "Puzzle", rating: 4.5, playtime: "10 min", difficulty: "Medium", popularity: "Classic", description: "A familiar puzzle cabinet for careful clicks and clean clears." },
+            { id: "coop-game", title: "Co-op Game", href: "dual.html", image: "dual.png", alt: "Co-op game", genre: "Multiplayer", rating: 4.6, playtime: "15 min", difficulty: "Medium", popularity: "Party pick", description: "Grab a second player and turn the lobby into a local showdown." },
+            { id: "drifter", title: "Drifter", href: "drift.html", image: "drift.png", alt: "Drifter", genre: "Action", rating: 4.3, playtime: "9 min", difficulty: "Hard", popularity: "Late-night mode", description: "Slide through corners and chase cleaner lines every run." },
+            { id: "spaceship-for-two", title: "Spaceship for Two", href: "spaceshipper.html", image: "dualspaceship.png", alt: "Spaceship for two", genre: "Multiplayer", rating: 4.6, playtime: "14 min", difficulty: "Medium", popularity: "Co-op favorite", description: "Pilot together and keep the run alive longer than either could solo." },
+            { id: "tycoon-clicker", title: "Tycoon Clicker", href: "Tycoon.html", image: "tycoon.png", alt: "Tycoon clicker", genre: "Idle", rating: 4.2, playtime: "30 min", difficulty: "Easy", popularity: "Chill grind", description: "An easygoing cabinet for upgrades, loops, and steady progress." },
+            { id: "playground-3d", title: "3D Playground", href: "3d2.html", image: "3dbase.png", alt: "3D playground", genre: "Action", rating: 4.1, playtime: "11 min", difficulty: "Easy", popularity: "Sandbox", description: "A playful 3D cabinet built for quick messing around." },
+            { id: "avoid-it", title: "Avoid-it!", href: "slope.html", image: "avoidit.png", alt: "Avoid-it", genre: "Action", rating: 4.4, playtime: "7 min", difficulty: "Hard", popularity: "Reflex test", description: "Fast movement and just-one-more-run energy all the way through." },
+            { id: "pulse-pit", title: "Pulse Pit", href: "last.html", image: "pulsepit.png", alt: "Pulse Pit", genre: "Action", rating: 4.7, playtime: "13 min", difficulty: "Hard", popularity: "Arena hype", description: "A punchy arena cabinet with lights, movement, and pressure." }
+        ];
+
+        const favoriteKey = "voxyArcadeFavorites";
+        const recentKey = "voxyArcadeRecent";
+        const categories = ["All", "Action", "Puzzle", "Multiplayer", "Idle"];
+
+        const state = {
+            query: "",
+            filter: "All",
+            favorites: loadStore(favoriteKey),
+            recent: loadStore(recentKey)
+        };
+
+        const featuredGrid = document.getElementById("featuredGrid");
+        const continuePlaying = document.getElementById("continuePlaying");
+        const favoritesGrid = document.getElementById("favoritesGrid");
+        const gameGrid = document.getElementById("gameGrid");
+        const resultsCount = document.getElementById("resultsCount");
+        const filterChips = document.getElementById("filterChips");
+        const searchInput = document.getElementById("searchInput");
+        const favoriteCount = document.getElementById("favoriteCount");
+        const gameCount = document.getElementById("gameCount");
+        const featuredDay = document.getElementById("featuredDay");
+        const favoritesShortcut = document.getElementById("favoritesShortcut");
+        const loadingOverlay = document.getElementById("loadingOverlay");
+
+        function loadStore(key) {
+            try {
+                const value = JSON.parse(localStorage.getItem(key) || "[]");
+                return Array.isArray(value) ? value : [];
+            } catch (error) {
+                return [];
+            }
+        }
+
+        function saveStore(key, value) {
+            localStorage.setItem(key, JSON.stringify(value));
+        }
+
+        function slugMatches(game, query) {
+            const haystack = [game.title, game.genre, game.difficulty, game.popularity, game.description]
+                .join(" ")
+                .toLowerCase();
+            return haystack.includes(query);
+        }
+
+        function getFilteredGames() {
+            return games.filter((game) => {
+                const matchesFilter = state.filter === "All" || game.genre === state.filter;
+                const matchesQuery = !state.query || slugMatches(game, state.query);
+                return matchesFilter && matchesQuery;
+            });
+        }
+
+        function getFeaturedGames() {
+            const today = new Date();
+            const daySeed = Math.floor(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()) / 86400000);
+            const firstIndex = daySeed % games.length;
+            const secondIndex = (firstIndex + 5) % games.length;
+            return [games[firstIndex], games[secondIndex]];
+        }
+
+        function renderFilters() {
+            filterChips.innerHTML = categories.map((category) => `
+                <button class="chip sound-trigger ${category === state.filter ? "active" : ""}" type="button" data-filter="${category}">
+                    ${category}
+                </button>
+            `).join("");
+        }
+
+        function getCardTemplate(game, includeFavoriteButton = true) {
+            const isFavorite = state.favorites.includes(game.id);
+
+            return `
+                <article class="card tilt-card" data-id="${game.id}">
+                    <a class="card-link sound-trigger" href="${game.href}" data-play="${game.title}">
+                        <div class="card-media">
+                            <img src="${game.image}" alt="${game.alt}" loading="lazy" decoding="async">
+                            <div class="card-overlay">
+                                <span class="play-button">Play</span>
+                            </div>
+                        </div>
+                    </a>
+                    <div class="card-body">
+                        <div class="card-topline">
+                            <div>
+                                <div class="badge-row">
+                                    <span class="badge">${game.genre}</span>
+                                    <span class="badge">${game.popularity}</span>
+                                </div>
+                                <h3 class="card-title">${game.title}</h3>
+                            </div>
+                            ${includeFavoriteButton ? `
+                                <button
+                                    class="icon-button favorite-toggle sound-trigger ${isFavorite ? "is-active" : ""}"
+                                    type="button"
+                                    data-id="${game.id}"
+                                    aria-label="${isFavorite ? "Remove" : "Add"} ${game.title} ${isFavorite ? "from" : "to"} favorites">
+                                    ${isFavorite ? "★" : "☆"}
+                                </button>
+                            ` : ""}
+                        </div>
+                        <p class="card-subtitle">${game.description}</p>
+                        <div class="meta-row">
+                            <span class="meta-pill">⭐ ${game.rating.toFixed(1)}</span>
+                            <span class="meta-pill">⏱ ${game.playtime}</span>
+                            <span class="meta-pill">🎯 ${game.difficulty}</span>
+                        </div>
+                        <div class="card-footer">
+                            <span class="score">${game.popularity}</span>
+                            <div class="card-actions">
+                                <a class="play-button sound-trigger" href="${game.href}" data-play="${game.title}">Play</a>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            `;
+        }
+
+        function renderFeatured() {
+            const today = new Date();
+            const dailyGames = getFeaturedGames();
+            featuredDay.textContent = today.toLocaleDateString(undefined, { weekday: "short" });
+
+            featuredGrid.innerHTML = dailyGames.map((game, index) => {
+                const isFavorite = state.favorites.includes(game.id);
+                return `
+                    <article class="featured-card">
+                        <div class="featured-art">
+                            <img src="${game.image}" alt="${game.alt}" loading="${index === 0 ? "eager" : "lazy"}" decoding="async">
+                        </div>
+                        <div class="featured-card-body">
+                            <span class="featured-label">${index === 0 ? "Spotlight One" : "Spotlight Two"}</span>
+                            <div class="badge-row" style="margin-top: 14px;">
+                                <span class="badge">${game.genre}</span>
+                                <span class="badge">${game.popularity}</span>
+                            </div>
+                            <h2>${game.title}</h2>
+                            <p class="featured-copy">${game.description}</p>
+                            <div class="meta-row">
+                                <span class="meta-pill">⭐ ${game.rating.toFixed(1)}</span>
+                                <span class="meta-pill">⏱ ${game.playtime}</span>
+                                <span class="meta-pill">🎯 ${game.difficulty}</span>
+                            </div>
+                            <div class="hero-actions">
+                                <a class="play-button sound-trigger" href="${game.href}" data-play="${game.title}">Play Now</a>
+                                <button
+                                    class="icon-button favorite-toggle sound-trigger ${isFavorite ? "is-active" : ""}"
+                                    type="button"
+                                    data-id="${game.id}"
+                                    aria-label="${isFavorite ? "Remove" : "Add"} ${game.title} ${isFavorite ? "from" : "to"} favorites">
+                                    ${isFavorite ? "★" : "☆"}
+                                </button>
+                            </div>
+                        </div>
+                    </article>
+                `;
+            }).join("");
+        }
+
+        function renderGames() {
+            const filteredGames = getFilteredGames();
+            resultsCount.textContent = filteredGames.length
+                ? `${filteredGames.length} cabinet${filteredGames.length === 1 ? "" : "s"} ready`
+                : "No cabinets match that search.";
+
+            gameGrid.innerHTML = filteredGames.length
+                ? filteredGames.map((game) => getCardTemplate(game)).join("")
+                : '<div class="empty-state">Try another search or category.</div>';
+
+            applyTilt();
+            syncFavoriteButtons();
+        }
+
+        function renderFavorites() {
+            const favorites = state.favorites
+                .map((id) => games.find((game) => game.id === id))
+                .filter(Boolean);
+
+            favoriteCount.textContent = String(favorites.length);
+            favoritesGrid.innerHTML = favorites.length
+                ? favorites.map((game) => getCardTemplate(game)).join("")
+                : '<div class="empty-state">No favorites yet. Hit the star on any game card to build your shelf.</div>';
+
+            applyTilt();
+            syncFavoriteButtons();
+        }
+
+        function renderContinuePlaying() {
+            const recentGames = state.recent
+                .map((id) => games.find((game) => game.id === id))
+                .filter(Boolean);
+
+            const fallbackGames = getFeaturedGames();
+            const list = recentGames.length ? recentGames : fallbackGames;
+
+            continuePlaying.innerHTML = list.map((game) => `
+                <article class="card">
+                    <a class="card-link sound-trigger" href="${game.href}" data-play="${game.title}">
+                        <div class="card-media">
+                            <img src="${game.image}" alt="${game.alt}" loading="lazy" decoding="async">
+                            <div class="card-overlay">
+                                <span class="play-button">${recentGames.length ? "Resume" : "Play"}</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="badge-row">
+                                <span class="badge">${game.genre}</span>
+                            </div>
+                            <h3 class="card-title">${game.title}</h3>
+                            <p class="card-subtitle">${recentGames.length ? "Back in the cabinet you played last." : game.description}</p>
+                        </div>
+                    </a>
+                </article>
+            `).join("");
+        }
+
+        function toggleFavorite(gameId) {
+            state.favorites = state.favorites.includes(gameId)
+                ? state.favorites.filter((id) => id !== gameId)
+                : [gameId, ...state.favorites].slice(0, 12);
+
+            saveStore(favoriteKey, state.favorites);
+            renderFeatured();
+            renderFavorites();
+            renderGames();
+        }
+
+        function syncFavoriteButtons() {
+            document.querySelectorAll(".favorite-toggle").forEach((button) => {
+                const isFavorite = state.favorites.includes(button.dataset.id);
+                const game = games.find((entry) => entry.id === button.dataset.id);
+                button.classList.toggle("is-active", isFavorite);
+                button.textContent = isFavorite ? "★" : "☆";
+
+                if (game) {
+                    button.setAttribute(
+                        "aria-label",
+                        `${isFavorite ? "Remove" : "Add"} ${game.title} ${isFavorite ? "from" : "to"} favorites`
+                    );
+                }
+            });
+        }
+
+        function addRecentPlay(gameTitle) {
+            const game = games.find((entry) => entry.title === gameTitle);
+            if (!game) return;
+
+            state.recent = [game.id, ...state.recent.filter((id) => id !== game.id)].slice(0, 6);
+            saveStore(recentKey, state.recent);
+            renderContinuePlaying();
+        }
+
+        function applyTilt() {
+            if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+            document.querySelectorAll(".tilt-card").forEach((card) => {
+                if (card.dataset.tiltBound === "true") return;
+                card.dataset.tiltBound = "true";
+
+                card.addEventListener("mousemove", (event) => {
+                    const rect = card.getBoundingClientRect();
+                    const x = event.clientX - rect.left;
+                    const y = event.clientY - rect.top;
+                    const rotateY = ((x / rect.width) - 0.5) * 7;
+                    const rotateX = ((y / rect.height) - 0.5) * -7;
+                    card.style.transform = `translateY(-8px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.012)`;
+                });
+
+                card.addEventListener("mouseleave", () => {
+                    card.style.transform = "";
+                });
+            });
+        }
+
+        let audioContext;
+
+        function playClickSound() {
+            if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+            const Context = window.AudioContext || window.webkitAudioContext;
+            if (!Context) return;
+
+            audioContext = audioContext || new Context();
+
+            if (audioContext.state === "suspended") {
+                audioContext.resume();
+            }
+
+            const oscillator = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+
+            oscillator.type = "square";
+            oscillator.frequency.setValueAtTime(620, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(430, audioContext.currentTime + 0.08);
+            gain.gain.setValueAtTime(0.001, audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.018, audioContext.currentTime + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.09);
+
+            oscillator.connect(gain);
+            gain.connect(audioContext.destination);
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.1);
+        }
+
+        function renderAll() {
+            renderFilters();
+            renderFeatured();
+            renderContinuePlaying();
+            renderFavorites();
+            renderGames();
+            gameCount.textContent = String(games.length);
+        }
+
+        searchInput.addEventListener("input", (event) => {
+            state.query = event.target.value.trim().toLowerCase();
+            renderGames();
+        });
+
+        filterChips.addEventListener("click", (event) => {
+            const button = event.target.closest("[data-filter]");
+            if (!button) return;
+            state.filter = button.dataset.filter;
+            renderFilters();
+            renderGames();
+        });
+
+        document.addEventListener("click", (event) => {
+            const favoriteButton = event.target.closest(".favorite-toggle");
+            if (favoriteButton) {
+                toggleFavorite(favoriteButton.dataset.id);
+            }
+
+            const soundTarget = event.target.closest(".sound-trigger, .play-button, .icon-button");
+            if (soundTarget) {
+                playClickSound();
+            }
+
+            const playTarget = event.target.closest("[data-play]");
+            if (playTarget) {
+                addRecentPlay(playTarget.dataset.play);
+            }
+        });
+
+        favoritesShortcut.addEventListener("click", () => {
+            document.getElementById("favorites").scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+
+        renderAll();
+
+        window.addEventListener("load", () => {
+            window.setTimeout(() => {
+                loadingOverlay.classList.add("hidden");
+            }, 350);
+        });
+    </script>
 </body>
 </html>
