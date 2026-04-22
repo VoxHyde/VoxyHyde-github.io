@@ -143,7 +143,7 @@
         
     };
 
-    let worldGrid = {}, enemies = [], bullets = [], walls = [], keys = {}, isPaused = true, isLeveling = false, bossSpawned = false, lastShot = 0;
+    let worldGrid = {}, enemies = [], bullets = [], walls = [], keys = {}, isPaused = true, isLeveling = false, bossSpawned = false, lastShot = 0, bossCheckInterval = null;
 
 function initWorld() {
         for(let x=0; x<3; x++) {
@@ -201,6 +201,18 @@ window.addEventListener('keydown', e => {
     function startGame() {
         player.name = document.getElementById('playerName').value.trim() || "PILOT";
         document.getElementById('disp-name').innerText = "PILOT: " + player.name;
+        player.level = 1;
+        player.kills = 0;
+        player.gold = 0;
+        player.hp = player.maxHp;
+        player.sectorX = 1;
+        player.sectorY = 1;
+        bossSpawned = false;
+        if (bossCheckInterval) {
+            clearInterval(bossCheckInterval);
+            bossCheckInterval = null;
+        }
+        document.getElementById('boss-hud').style.display = 'none';
         initWorld();
         player.x = canvas.width/2; player.y = canvas.height/2;
         document.getElementById('start-menu').style.display = 'none';
@@ -217,6 +229,38 @@ function loadSector() {
         enemies = s.enemies; // Load this room's specific enemies
         walls = s.walls;
         clearSpawnArea(); 
+    }
+
+    function currentRoomKey() {
+        return `${player.sectorX},${player.sectorY}`;
+    }
+
+    function syncCurrentRoomEnemies() {
+        if (worldGrid[currentRoomKey()]) {
+            worldGrid[currentRoomKey()].enemies = enemies;
+        }
+    }
+
+    function areAllRoomsCleared() {
+        syncCurrentRoomEnemies();
+        return Object.values(worldGrid).every(room => !room.enemies || room.enemies.length === 0);
+    }
+
+    function startBossSpawnWatcher() {
+        if (bossCheckInterval || bossSpawned) return;
+
+        bossCheckInterval = setInterval(() => {
+            if (isPaused) return;
+            if (player.level < 56 || bossSpawned) return;
+            if (!areAllRoomsCleared()) return;
+
+            enemies = [];
+            syncCurrentRoomEnemies();
+            spawnBoss();
+            bossSpawned = true;
+            clearInterval(bossCheckInterval);
+            bossCheckInterval = null;
+        }, 1000);
     }
 function togglePause(forcedLevel = false) {
     // 1. If we are in level-up mode, block the Escape key from closing the menu
@@ -273,6 +317,7 @@ function togglePause(forcedLevel = false) {
             if(type === 'dmg') player.damage += 2;
             if(type === 'spd') player.speed += 0.5;
             if(type === 'hp') { player.maxHp += 20; player.hp = player.maxHp; }
+            updateUI();
         }
     }
     
@@ -281,6 +326,7 @@ function togglePause(forcedLevel = false) {
         if(player.gold >= 100) {
             player.gold -= 100;
             player.color = newColor;
+            updateUI();
         }
     }
 
@@ -353,19 +399,10 @@ function update() {
             return; // Skip the rest of this frame to prevent glitches
         }
 
-        if (shifted) {
-            worldGrid[`${oldX},${oldY}`].enemies = [...enemies]; 
-            bullets = []; 
-            loadSector(); 
-            return; // Stop processing this frame to prevent errors
-        }
-
         if(player.dashCooldown > 0) player.dashCooldown--;
 
         // Spawning Logic
-        if(player.level === 56 && !bossSpawned) {
-            enemies = []; spawnBoss(); bossSpawned = true;
-        }
+        if(player.level >= 56 && !bossSpawned) startBossSpawnWatcher();
         if(player.level < 56 && Math.random() < 0.02) {
             let t = (Math.random() * player.level > 10) ? 2 : (Math.random() * player.level > 5 ? 1 : 0);
             spawnEnemy(t, Math.random()*canvas.width, -50);
@@ -382,7 +419,25 @@ function update() {
                     e.hp -= player.damage; bullets.splice(bi,1);
                     if(e.hp <= 0) {
                         enemies.splice(i,1); player.kills++; player.gold += (e.tier + 1);
-                        if(player.level < 56 && player.kills % 10 === 0) { player.level++; togglePause(true); }
+                        syncCurrentRoomEnemies();
+
+                        if (e.tier === 4) {
+                            if (bossCheckInterval) {
+                                clearInterval(bossCheckInterval);
+                                bossCheckInterval = null;
+                            }
+                            document.getElementById('cert-name').innerText = player.name;
+                            document.getElementById('boss-hud').style.display = 'none';
+                            document.getElementById('victory-screen').style.display = 'block';
+                            isPaused = true;
+                            return;
+                        }
+
+                        if(player.level < 56 && player.kills % 10 === 0) {
+                            player.level++;
+                            if (player.level >= 56) startBossSpawnWatcher();
+                            togglePause(true);
+                        }
                     }
                 }
             });
@@ -401,6 +456,10 @@ function update() {
         });
 
         if(player.hp <= 0) {
+            if (bossCheckInterval) {
+                clearInterval(bossCheckInterval);
+                bossCheckInterval = null;
+            }
             document.getElementById('final-stats-log').innerText = `KILLS: ${player.kills} | LEVEL: ${player.level}`;
             document.getElementById('death-screen').style.display = 'block'; 
             isPaused = true;
@@ -422,7 +481,8 @@ function update() {
         });
     }
     function spawnBoss() {
-        enemies.push({ x: canvas.width/2, y: -100, tier: 4, color: '#fff', hp: 3000, speed: 1.5, dmg: 5 });
+        enemies.push({ x: canvas.width/2, y: -100, tier: 4, color: '#fff', hp: 3000, maxHp: 3000, speed: 1.5, dmg: 5 });
+        syncCurrentRoomEnemies();
     }
 
 function updateUI() {
@@ -452,6 +512,14 @@ function updateUI() {
         
         // 4. Dash Bar
         document.getElementById('dash-fill').style.width = (1 - Math.max(0, player.dashCooldown)/120)*100 + "%";
+        const boss = enemies.find(enemy => enemy.tier === 4);
+        const bossHud = document.getElementById('boss-hud');
+        if (boss) {
+            bossHud.style.display = 'block';
+            document.getElementById('boss-hp-fill').style.width = `${Math.max(0, (boss.hp / boss.maxHp) * 100)}%`;
+        } else {
+            bossHud.style.display = 'none';
+        }
 
         // 5. Minimap Pulse Logic
         document.querySelectorAll('.m-cell').forEach(cell => {
@@ -521,12 +589,6 @@ function updateUI() {
         ctx.fillStyle = '#fff'; 
         bullets.forEach(b => ctx.fillRect(b.x - 3, b.y - 3, 6, 6));
     }
-    function loop() { 
-        update(); 
-        draw(); 
-        requestAnimationFrame(loop);
-    }   
-
     function loop() { update(); draw(); requestAnimationFrame(loop); }
 </script>
 </body>

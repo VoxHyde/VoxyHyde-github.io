@@ -216,7 +216,7 @@
         .favorites-panel,
         .leaderboard-panel,
         .spotlight-panel {
-            padding: 24px;
+            padding: 20px;
         }
 
         .hero-copy::after,
@@ -351,7 +351,7 @@
             align-items: end;
             justify-content: space-between;
             gap: 16px;
-            margin: 38px 0 16px;
+            margin: 28px 0 12px;
         }
 
         .section-title {
@@ -399,12 +399,16 @@
         .featured-grid {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 20px;
+            gap: 14px;
         }
 
         .featured-card {
             min-height: 100%;
+            display: grid;
+            grid-template-columns: 170px minmax(0, 1fr);
+            align-items: stretch;
             animation: featuredPulse 3.8s ease-in-out infinite;
+            overflow: hidden;
         }
 
         @keyframes featuredPulse {
@@ -414,8 +418,11 @@
 
         .featured-art {
             position: relative;
-            aspect-ratio: 1 / 1;
+            height: 100%;
+            min-height: 170px;
             overflow: hidden;
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.03);
         }
 
         .featured-art img,
@@ -433,8 +440,31 @@
             background: linear-gradient(180deg, rgba(5, 10, 20, 0.06) 12%, rgba(5, 10, 20, 0.9) 100%);
         }
 
+        .featured-art::after {
+            background: linear-gradient(90deg, rgba(5, 10, 20, 0.02), rgba(5, 10, 20, 0.22));
+        }
+
         .featured-card-body {
-            padding: 18px;
+            padding: 14px 16px;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .featured-copy-wrap {
+            display: grid;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .featured-action-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: auto;
+            padding-top: 6px;
         }
 
         .featured-label,
@@ -478,6 +508,15 @@
             margin: 14px 0 8px;
         }
 
+        .featured-card h2 {
+            margin: 0;
+            line-height: 1.15;
+        }
+
+        .featured-copy {
+            margin: 0;
+        }
+
         .featured-rotation {
             margin-top: 12px;
             color: var(--muted);
@@ -491,7 +530,24 @@
         }
 
         .favorites-grid {
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-auto-flow: column;
+            grid-auto-columns: minmax(210px, 240px);
+            overflow-x: auto;
+            padding-bottom: 6px;
+            scroll-snap-type: x proximity;
+        }
+
+        .favorites-grid > * {
+            scroll-snap-align: start;
+        }
+
+        .favorites-grid::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .favorites-grid::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.16);
+            border-radius: 999px;
         }
 
         .game-grid {
@@ -729,6 +785,10 @@
                 grid-template-columns: 1fr;
             }
 
+            .featured-card {
+                grid-template-columns: 150px minmax(0, 1fr);
+            }
+
             .nav-links,
             .filters,
             .topbar-actions {
@@ -762,8 +822,18 @@
             }
 
             .game-grid,
-            .favorites-grid {
+            .featured-card {
                 grid-template-columns: 1fr;
+            }
+
+            .featured-art {
+                min-height: 210px;
+                border-right: 0;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            }
+
+            .favorites-grid {
+                grid-auto-columns: 85%;
             }
         }
 
@@ -827,7 +897,7 @@
 
                 <div class="hero-stats">
                     <div class="stat">
-                        <strong id="gameCount">12</strong>
+                        <strong id="gameCount">13</strong>
                         <span>Games ready to play</span>
                     </div>
                     <div class="stat">
@@ -944,7 +1014,7 @@
             </div>
         </section>
 
-        <footer class="footer">2026 Voxy's AI Arcade Hub</footer>
+        <footer class="footer">2026 Voxy Arcade Hub</footer>
     </main>
 
     <script>
@@ -960,7 +1030,8 @@
             { id: "tycoon-clicker", title: "Tycoon Clicker", href: "Tycoon.html", image: "tycoon.png", alt: "Tycoon clicker", genre: "Idle", rating: 4.2, playtime: "30 min", difficulty: "Easy", popularity: "Chill grind", description: "An easygoing cabinet for upgrades, loops, and steady progress." },
             { id: "playground-3d", title: "3D Playground", href: "3d2.html", image: "3dbase.png", alt: "3D playground", genre: "Action", rating: 4.1, playtime: "11 min", difficulty: "Easy", popularity: "Sandbox", description: "A playful 3D cabinet built for quick messing around." },
             { id: "avoid-it", title: "Avoid-it!", href: "slope.html", image: "avoidit.png", alt: "Avoid-it", genre: "Action", rating: 4.4, playtime: "7 min", difficulty: "Hard", popularity: "Reflex test", description: "Fast movement and just-one-more-run energy all the way through." },
-            { id: "pulse-pit", title: "Pulse Pit", href: "last.html", image: "pulsepit.png", alt: "Pulse Pit", genre: "Action", rating: 4.7, playtime: "13 min", difficulty: "Hard", popularity: "Arena hype", description: "A punchy arena cabinet with lights, movement, and pressure." }
+            { id: "pulse-pit", title: "Pulse Pit", href: "last.html", image: "pulsepit.png", alt: "Pulse Pit", genre: "Action", rating: 4.7, playtime: "13 min", difficulty: "Hard", popularity: "Arena hype", description: "A punchy arena cabinet with lights, movement, and pressure." },
+            { id: "passians", title: "Passians", href: "passians.html", image: "passians.png", alt: "Passians patience card game", genre: "Puzzle", rating: 4.6, playtime: "14 min", difficulty: "Medium", popularity: "Fresh table", description: "A patience-style pyramid card game with move counting and a local winners board." }
         ];
 
         const favoriteKey = "voxyArcadeFavorites";
@@ -1093,19 +1164,21 @@
                             <img src="${game.image}" alt="${game.alt}" loading="${index === 0 ? "eager" : "lazy"}" decoding="async">
                         </div>
                         <div class="featured-card-body">
-                            <span class="featured-label">${index === 0 ? "Spotlight One" : "Spotlight Two"}</span>
-                            <div class="badge-row" style="margin-top: 14px;">
-                                <span class="badge">${game.genre}</span>
-                                <span class="badge">${game.popularity}</span>
+                            <div class="featured-copy-wrap">
+                                <span class="featured-label">${index === 0 ? "Spotlight One" : "Spotlight Two"}</span>
+                                <div class="badge-row">
+                                    <span class="badge">${game.genre}</span>
+                                    <span class="badge">${game.popularity}</span>
+                                </div>
+                                <h2>${game.title}</h2>
+                                <p class="featured-copy">${game.description}</p>
+                                <div class="meta-row">
+                                    <span class="meta-pill">⭐ ${game.rating.toFixed(1)}</span>
+                                    <span class="meta-pill">⏱ ${game.playtime}</span>
+                                    <span class="meta-pill">🎯 ${game.difficulty}</span>
+                                </div>
                             </div>
-                            <h2>${game.title}</h2>
-                            <p class="featured-copy">${game.description}</p>
-                            <div class="meta-row">
-                                <span class="meta-pill">⭐ ${game.rating.toFixed(1)}</span>
-                                <span class="meta-pill">⏱ ${game.playtime}</span>
-                                <span class="meta-pill">🎯 ${game.difficulty}</span>
-                            </div>
-                            <div class="hero-actions">
+                            <div class="featured-action-row">
                                 <a class="play-button sound-trigger" href="${game.href}" data-play="${game.title}">Play Now</a>
                                 <button
                                     class="icon-button favorite-toggle sound-trigger ${isFavorite ? "is-active" : ""}"

@@ -375,7 +375,7 @@ function updateUI() {
 
     if (state.turboLevel < 3) {
         const cost = costs[state.turboLevel];
-        html += `<button onclick="buyTurbo()" class="buy-btn" style="width:100%; margin-bottom:10px;" ${state.credits < cost ? 'disabled' : ''}>
+        html += `<button onpointerdown="buyTurbo(); return false;" class="buy-btn" style="width:100%; margin-bottom:10px;" ${state.credits < cost ? 'disabled' : ''}>
                     🚀 ${state.turboLevel === 0 ? 'UNLOCK' : 'UPGRADE'} AUTO-CLICK ($${formatNumber(cost)})
                  </button>`;
     } else {
@@ -385,7 +385,7 @@ function updateUI() {
     if (state.isTurboUnlocked) {
         html += `<div class="turbo-toggle-wrap">
                     <span>AUTO-CLICK (LVL ${state.turboLevel})</span>
-                    <button onclick="toggleTurbo()" class="buy-btn" style="background:${state.isTurboActive ? '#2ecc71' : '#555'}">
+                    <button onpointerdown="toggleTurbo(); return false;" class="buy-btn" style="background:${state.isTurboActive ? '#2ecc71' : '#555'}">
                         ${state.isTurboActive ? 'ON' : 'OFF'}
                     </button>
                  </div>`;

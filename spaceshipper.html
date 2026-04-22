@@ -10,13 +10,64 @@
             position: absolute; top: 20px; left: 20px; color: #ff1a1a;
             text-shadow: 0 0 10px #800000; pointer-events: none; width: 300px;
         }
-        #upgrade-menu {
-            position: absolute; top: 20px; right: 20px; background: rgba(40,0,0,0.8);
-            padding: 15px; border: 1px solid #ff1a1a; color: white; border-radius: 8px;
-            display: none; pointer-events: all;
+        .overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(5, 0, 0, 0.78);
+            z-index: 20;
+            padding: 20px;
         }
-        .stat-btn { background: #800000; color: white; border: none; padding: 5px 10px; cursor: pointer; margin: 5px; }
+        .menu-card {
+            width: min(520px, 100%);
+            background: rgba(40, 0, 0, 0.9);
+            padding: 22px;
+            border: 1px solid #ff1a1a;
+            color: white;
+            border-radius: 18px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+        }
+        .menu-card h2, .menu-card h3, .menu-card p {
+            margin-top: 0;
+        }
+        .menu-grid {
+            display: grid;
+            gap: 14px;
+        }
+        .menu-section {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 14px;
+        }
+        #pause-menu {
+            display: none;
+            pointer-events: all;
+        }
+        #start-screen {
+            pointer-events: all;
+        }
+        .stat-btn, .primary-btn {
+            background: #800000;
+            color: white;
+            border: none;
+            padding: 10px 14px;
+            cursor: pointer;
+            margin: 5px 5px 0 0;
+            border-radius: 10px;
+            font-weight: 700;
+        }
+        .primary-btn {
+            background: #ff1a1a;
+            color: #180000;
+        }
         .stat-btn:disabled { background: #333; }
+        .control-preview {
+            color: #ffcf7d;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -24,15 +75,48 @@
 <div id="ui">
     <div style="font-size: 1.5rem; font-weight: bold;">HULL: <span id="hp">100</span>% | WAVE: <span id="wave">1</span></div>
     <div>POINTS: <span id="pts">0</span></div>
+    <div>MOVE: <span id="move-keys">WASD</span> | CANNON: <span id="cannon-keys">ARROWS</span></div>
     <div id="msg" style="color: yellow; font-weight: bold;"></div>
 </div>
 
-<div id="upgrade-menu">
-    <h3>SHIP UPGRADES</h3>
-    <div>Speed: <span id="s-speed">0</span>/25 <button class="stat-btn" onclick="upgrade('speed')">+</button></div>
-    <div>Fire Rate: <span id="s-rate">0</span>/25 <button class="stat-btn" onclick="upgrade('rate')">+</button></div>
-    <div>Damage: <span id="s-dmg">0</span>/25 <button class="stat-btn" onclick="upgrade('dmg')">+</button></div>
-    <p style="font-size: 0.8rem;">Press 'E' to toggle menu</p>
+<div id="start-screen" class="overlay">
+    <div class="menu-card">
+        <h2>CRIMSON VOID: CO-OP PROTOCOL</h2>
+        <p>Pick which side controls movement and which side controls the cannon before launch.</p>
+        <div class="menu-grid">
+            <div class="menu-section">
+                <h3>Control Layout</h3>
+                <p class="control-preview" id="start-control-preview">Move with WASD • Aim and fire with Arrows</p>
+                <button class="primary-btn" id="swap-controls-start" type="button">Swap Sides</button>
+            </div>
+            <div class="menu-section">
+                <h3>How It Plays</h3>
+                <p>Movement uses one key cluster. The other cluster turns the cannon and fires forward. Press Escape during the run for upgrades and settings.</p>
+            </div>
+        </div>
+        <button class="primary-btn" id="start-game-btn" type="button" style="margin-top: 16px;">Launch Run</button>
+    </div>
+</div>
+
+<div id="pause-menu" class="overlay">
+    <div class="menu-card">
+        <h2>Ship Systems</h2>
+        <div class="menu-grid">
+            <div class="menu-section">
+                <h3>Upgrades</h3>
+                <div>Speed: <span id="s-speed">0</span>/25 <button class="stat-btn" onclick="upgrade('speed')">+</button></div>
+                <div>Fire Rate: <span id="s-rate">0</span>/25 <button class="stat-btn" onclick="upgrade('rate')">+</button></div>
+                <div>Damage: <span id="s-dmg">0</span>/25 <button class="stat-btn" onclick="upgrade('dmg')">+</button></div>
+                <p style="font-size: 0.85rem; color: #ffcf7d;">Spend your wave points here.</p>
+            </div>
+            <div class="menu-section">
+                <h3>Control Settings</h3>
+                <p class="control-preview" id="pause-control-preview">Move with WASD • Aim and fire with Arrows</p>
+                <button class="stat-btn" id="swap-controls-pause" type="button">Swap Sides</button>
+            </div>
+        </div>
+        <button class="primary-btn" id="resume-game-btn" type="button" style="margin-top: 16px;">Resume</button>
+    </div>
 </div>
 
 <canvas id="gameCanvas"></canvas>
@@ -40,8 +124,12 @@
 <script>
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
 
 // --- CONFIG ---
 const state = {
@@ -52,13 +140,51 @@ const state = {
     hearts: [],
     cam: { x: 0, y: 0 },
     bossActive: false,
-    certAwarded: false 
+    certAwarded: false,
+    started: false,
+    menuOpen: false,
+    controlsSwapped: false
 };
 
 const ship = {
     x: 0, y: 0, radius: 40, turretAngle: 0,
     velX: 0, velY: 0, lastShot: 0
 };
+
+const startScreen = document.getElementById('start-screen');
+const pauseMenu = document.getElementById('pause-menu');
+const startControlPreview = document.getElementById('start-control-preview');
+const pauseControlPreview = document.getElementById('pause-control-preview');
+const moveKeysEl = document.getElementById('move-keys');
+const cannonKeysEl = document.getElementById('cannon-keys');
+
+function getMovementKeys() {
+    return state.controlsSwapped
+        ? { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' }
+        : { up: 'KeyW', down: 'KeyS', left: 'KeyA', right: 'KeyD' };
+}
+
+function getCannonKeys() {
+    return state.controlsSwapped
+        ? { left: 'KeyA', right: 'KeyD', fire: 'KeyW' }
+        : { left: 'ArrowLeft', right: 'ArrowRight', fire: 'ArrowUp' };
+}
+
+function refreshControlLabels() {
+    const moveLabel = state.controlsSwapped ? 'ARROWS' : 'WASD';
+    const cannonLabel = state.controlsSwapped ? 'WASD' : 'ARROWS';
+    const preview = `Move with ${moveLabel} • Aim and fire with ${cannonLabel}`;
+    startControlPreview.innerText = preview;
+    pauseControlPreview.innerText = preview;
+    moveKeysEl.innerText = moveLabel;
+    cannonKeysEl.innerText = cannonLabel;
+}
+
+function togglePauseMenu(forceOpen) {
+    if (!state.started || state.hp <= 0) return;
+    state.menuOpen = typeof forceOpen === 'boolean' ? forceOpen : !state.menuOpen;
+    pauseMenu.style.display = state.menuOpen ? 'flex' : 'none';
+}
 
 // --- PROCEDURAL GENERATION ---
 for(let i=0; i<200; i++) {
@@ -72,9 +198,9 @@ for(let i=0; i<200; i++) {
 // --- INPUT ---
 window.addEventListener('keydown', e => {
     state.keys[e.code] = true;
-    if(e.code === 'KeyE') {
-        const menu = document.getElementById('upgrade-menu');
-        menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    if (e.code === 'Escape') {
+        e.preventDefault();
+        togglePauseMenu();
     }
     if (e.code === 'KeyR' && state.hp <= 0) location.reload();
 });
@@ -95,6 +221,7 @@ function updateUI() {
     document.getElementById('s-speed').innerText = state.stats.speed;
     document.getElementById('s-rate').innerText = state.stats.rate;
     document.getElementById('s-dmg').innerText = state.stats.dmg;
+    refreshControlLabels();
 }
 
 class Alien {
@@ -118,6 +245,11 @@ class Alien {
 }
 
 function loop() {
+    if (!state.started) {
+        requestAnimationFrame(loop);
+        return;
+    }
+
     if (state.hp <= 0) {
         state.hp = 0;
         updateUI();
@@ -132,12 +264,19 @@ function loop() {
         return; 
     }
 
+    if (state.menuOpen) {
+        updateUI();
+        requestAnimationFrame(loop);
+        return;
+    }
+
     // Movement
+    const moveKeys = getMovementKeys();
     let speedMult = 1 + (state.stats.speed * 0.1);
-    if(state.keys['KeyW']) ship.velY -= 0.5 * speedMult;
-    if(state.keys['KeyS']) ship.velY += 0.5 * speedMult;
-    if(state.keys['KeyA']) ship.velX -= 0.5 * speedMult;
-    if(state.keys['KeyD']) ship.velX += 0.5 * speedMult;
+    if(state.keys[moveKeys.up]) ship.velY -= 0.5 * speedMult;
+    if(state.keys[moveKeys.down]) ship.velY += 0.5 * speedMult;
+    if(state.keys[moveKeys.left]) ship.velX -= 0.5 * speedMult;
+    if(state.keys[moveKeys.right]) ship.velX += 0.5 * speedMult;
     ship.x += ship.velX; ship.y += ship.velY;
     ship.velX *= 0.95; ship.velY *= 0.95;
 
@@ -145,15 +284,17 @@ function loop() {
     state.cam.y = ship.y - canvas.height/2;
 
     // Gunner
-    if(state.keys['ArrowLeft']) ship.turretAngle -= 0.08;
-    if(state.keys['ArrowRight']) ship.turretAngle += 0.08;
+    const cannonKeys = getCannonKeys();
+    if(state.keys[cannonKeys.left]) ship.turretAngle -= 0.08;
+    if(state.keys[cannonKeys.right]) ship.turretAngle += 0.08;
     let fireDelay = 400 - (state.stats.rate * 14);
-    if(state.keys['ArrowUp'] && Date.now() - ship.lastShot > fireDelay) {
+    if(state.keys[cannonKeys.fire] && Date.now() - ship.lastShot > fireDelay) {
         state.bullets.push({
             x: ship.x, y: ship.y,
             vx: Math.cos(ship.turretAngle) * 12,
             vy: Math.sin(ship.turretAngle) * 12,
-            dmg: 1 + (state.stats.dmg * 0.5)
+            dmg: 1 + (state.stats.dmg * 0.5),
+            r: 6
         });
         ship.lastShot = Date.now();
     }
@@ -255,7 +396,9 @@ function render() {
     state.bullets.forEach((b, i) => {
         b.x += b.vx; b.y += b.vy;
         ctx.fillStyle = 'yellow';
-        ctx.fillRect(b.x, b.y, 4, 4);
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.r || 6, 0, Math.PI * 2);
+        ctx.fill();
         if(Math.abs(b.x - ship.x) > 2000) state.bullets.splice(i, 1);
     });
 
@@ -294,6 +437,34 @@ function generateCertificate() {
     link.click();
 }
 
+document.getElementById('swap-controls-start').addEventListener('click', () => {
+    state.controlsSwapped = !state.controlsSwapped;
+    refreshControlLabels();
+});
+
+document.getElementById('swap-controls-pause').addEventListener('click', () => {
+    state.controlsSwapped = !state.controlsSwapped;
+    refreshControlLabels();
+});
+
+document.getElementById('start-game-btn').addEventListener('click', () => {
+    state.started = true;
+    state.menuOpen = false;
+    ship.x = 0;
+    ship.y = 0;
+    ship.velX = 0;
+    ship.velY = 0;
+    ship.turretAngle = 0;
+    startScreen.style.display = 'none';
+    updateUI();
+});
+
+document.getElementById('resume-game-btn').addEventListener('click', () => {
+    togglePauseMenu(false);
+});
+
+refreshControlLabels();
+updateUI();
 loop();
 </script>
 </body>
