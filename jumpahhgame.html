@@ -55,6 +55,7 @@
         const GRAVITY = 0.36;
         const JUMP_STRENGTH = -20;
         const MAX_X_SPEED = 11;
+        const FRAME_UNIT = 16.6667;
         // pending multiplier when landing on yellow star platform
         let pendingScoreMult = 1.0;
 
@@ -106,10 +107,14 @@
             gameActive = true; score = 0;
             platforms = []; _popups = [];
             pendingScoreMult = 1.0;
+            scoreEl.innerText = '0';
             startScreen.classList.add('hidden');
             player.x = width / 2 - player.w / 2;
             player.y = height * 0.7;
+            player.vx = 0;
             player.vy = JUMP_STRENGTH;
+            lastFrameTime = 0;
+            accumulator = 0;
             
             for(let i=0; i<10; i++) {
                 platforms.push(spawnPlatform(height - (i * (height / 8)), i === 0));
@@ -125,10 +130,8 @@
         };
         window.addEventListener('mousemove', handleInput);
         window.addEventListener('touchmove', e => { e.preventDefault(); handleInput(e); }, {passive: false});
-        // allow direct jump via Space to test/assist jump feeling
         window.addEventListener('keydown', e => {
             keys[e.code] = true;
-            if (e.code === 'Space') player.vy = JUMP_STRENGTH;
         });
         window.addEventListener('keyup', e => keys[e.code] = false);
 
@@ -142,7 +145,6 @@
             player.x += player.vx;
 
             // Vertical Physics
-            const oldY = player.y;
             const prevBottom = player.y + player.h;
             player.vy += GRAVITY;
             player.y += player.vy;
@@ -263,7 +265,8 @@
             ctx.font = 'bold 16px sans-serif';
             _popups.forEach((pop, i) => {
                 ctx.fillText(pop.t, pop.x, pop.y);
-                pop.y -= 1; pop.life--;
+                pop.y -= 1;
+                pop.life -= 1;
                 if(pop.life <= 0) _popups.splice(i, 1);
             });
 
@@ -273,11 +276,29 @@
             ctx.beginPath(); ctx.roundRect(player.x, player.y, player.w, player.h, 10); ctx.fill();
             ctx.shadowBlur = 0;
 
-            requestAnimationFrame(() => { update(); draw(); });
+        }
+
+        let lastFrameTime = 0;
+        let accumulator = 0;
+        function loop(timestamp) {
+            if (!lastFrameTime) lastFrameTime = timestamp;
+            const delta = Math.min(timestamp - lastFrameTime, 100);
+            lastFrameTime = timestamp;
+            accumulator += delta;
+
+            while (accumulator >= FRAME_UNIT) {
+                update();
+                accumulator -= FRAME_UNIT;
+            }
+
+            draw();
+            requestAnimationFrame(loop);
         }
 
         window.addEventListener('resize', resize);
-        resize(); draw();
+        resize();
+        draw();
+        requestAnimationFrame(loop);
     </script>
 </body>
 </html>
