@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Online Chess Matchmaking</title>
+    <meta charset="UTF-8">
+  <script src="https://cdn.jsdelivr.net/npm/chess.js"></script>
+
+  <style>
+    body { font-family: Arial; text-align: center; 
+        background-image: url('geminichess.png');
+    background-size: 100% 100%;
+    background-attachment: fixed;
+    margin: 0;
+    height: 100vh;
+    width: 100vw;
+}
+
+    #board {
+      display: grid;
+      grid-template-columns: repeat(8, 60px);
+      width: 480px;
+      margin: auto;
+      touch-action: manipulation;
+    }
+
+    .cell {
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      user-select: none;
+    }
+
+    .white { background: #eee; }
+    .black { background: #666; color: white; }
+    .selected { outline: 3px solid red; }
+  </style>
+</head>
+
+<body>
+
+<h2>♟️ Online Chess Matchmaking</h2>
+
+<button onclick="findMatch()">Find Match</button>
+
+<div id="status"></div>
+
+<div id="board"></div>
+
+<script>
+const SERVER = "http://localhost:3000";
+
+let pc = new RTCPeerConnection();
+let channel;
+let game = new Chess();
+
+let roomId = null;
+let role = null;
+let selected = null;
+let isMyTurn = false;
+
+// ♟ pieces
+const pieces = {
+  p:"♟", r:"♜", n:"♞", b:"♝", q:"♛", k:"♚",
+  P:"♙", R:"♖", N:"♘", B:"♗", Q:"♕", K:"♔"
+};
+
+// 🎨 draw board
+function drawBoard() {
+  const boardDiv = document.getElementById("board");
+  boardDiv.innerHTML = "";
+
+  game.board().forEach((row, y) => {
+    row.forEach((piece, x) => {
+      const cell = document.createElement("div");
+      cell.className = "cell " + ((x+y)%2 ? "black":"white");
+
+      if (piece) {
+        const key = piece.color === "w"
+          ? piece.type.toUpperCase()
+          : piece.type;
+
+        cell.innerText = pieces[key];
+      }
+
+      const square = "abcdefgh"[x] + (8 - y);
+
+      cell.onclick = () => handle(square);
+      cell.ontouchstart = e => {
+        e.preventDefault();
+        handle(square);
+      };
+
+      if (selected === square) cell.classList.add("selected");
+
+      boardDiv.appendChild(cell);
+    });
+  });
+}
+
+// 🎮 move logic
+function handle(square) {
+  if (!isMyTurn) return;
+
+  if (!selected) {
+    selected = square;
+  } else {
+    const move = game.move({
+      from: selected,
+      to: square,
+      promotion: "q"
+    });
+
+    if (move) {
+      channel.send(JSON.stringify({ type:"move", move }));
+      isMyTurn = false;
+    }
+
+    selected = null;
+  }
+
+  drawBoard();
+}
+
+// 📡 setup channel
+function setupChannel() {
+  channel.onmessage = e => {
+    const data = JSON.parse(e.data);
+
+    if (data.type === "move") {
+      game.move(data.move);
+      isMyTurn = true;
+      drawBoard();
+    }
+  };
+}
+
+// 🟢 matchmaking
+async function findMatch() {
+  document.getElementById("status").innerText = "Searching for opponent...";
+
+  const res = await fetch(SERVER + "/find", {
+    method: "POST"
+  });
+
+  const data = await res.json();
+  roomId = data.room;
+  role = data.role;
+
+  document.getElementById("status").innerText =
+    "Matched! Role: " + role;
+
+  if (role === "offerer") {
+    await startOfferer();
+  } else {
+    await startAnswerer();
+  }
+}
+
+// 🟢 OFFERER (white usually)
+async function startOfferer() {
+  channel = pc.createDataChannel("game");
+  setupChannel();
+
+  isMyTurn = true;
+
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+
+  pc.onicecandidate = async e => {
+    if (!e.candidate) {
+      await fetch(SERVER + "/offer/" + roomId, {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(pc.localDescription)
+      });
+
+      pollAnswer();
+    }
+  };
+}
+
+// 🔵 ANSWERER (black usually)
+async function startAnswerer() {
+  const res = await fetch(SERVER + "/offer/" + roomId);
+  const offer = await res.json();
+
+  pc.ondatachannel = e => {
+    channel = e.channel;
+    setupChannel();
+  };
+
+  await pc.setRemoteDescription(offer);
+
+  const answer = await pc.createAnswer();
+  await pc.setLocalDescription(answer);
+
+  pc.onicecandidate = async e => {
+    if (!e.candidate) {
+      await fetch(SERVER + "/answer/" + roomId, {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(pc.localDescription)
+      });
+    }
+  };
+}
+
+// ⏳ poll answer
+async function pollAnswer() {
+  const interval = setInterval(async () => {
+    const res = await fetch(SERVER + "/answer/" + roomId);
+
+    if (res.status === 200) {
+      const answer = await res.json();
+      await pc.setRemoteDescription(answer);
+      clearInterval(interval);
+      document.getElementById("status").innerText = "Connected!";
+    }
+  }, 1000);
+}
+
+// init
+drawBoard();
+</script>
+
+</body>
+</html>
