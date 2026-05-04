@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voxy Chess</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <script src="https://cdn.jsdelivr.net/npm/chess.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <style>
+    :root {
+      --bg: #07101d;
+      --panel: rgba(7, 13, 25, 0.9);
+      --panel-strong: rgba(5, 10, 20, 0.96);
+      --line: rgba(255, 255, 255, 0.12);
+      --text: #f5fbff;
+      --muted: #a8b7ce;
+      --cyan: #75e6ff;
+      --lime: #b8ff6a;
+      --gold: #ffd56b;
+      --red: #ff6d7d;
+      --dark-square: #35605f;
+      --light-square: #d7e6d1;
+      --selected: #ffda6a;
+      --shadow: 0 22px 60px rgba(0, 0, 0, 0.42);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+    }
+
+    body {
+      color: var(--text);
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      background:
+        linear-gradient(180deg, rgba(4, 8, 16, 0.32), rgba(4, 8, 16, 0.9)),
+        url("Geminichess.png") center / cover fixed,
+        var(--bg);
+      overflow-x: hidden;
+    }
+
+    .page {
+      width: min(1180px, calc(100% - 24px));
+      margin: 0 auto;
+      padding: 18px 0 28px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .topbar,
+    .board-shell,
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+
+    .topbar {
+      border-radius: 18px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: clamp(1.75rem, 4vw, 3rem);
+      line-height: 1;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .brand p {
+      margin: 6px 0 0;
+      color: var(--muted);
+    }
+
+    .top-actions,
+    .button-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button,
+    textarea,
+    input {
+      font: inherit;
+    }
+
+    .button {
+      min-height: 44px;
+      border: 0;
+      border-radius: 8px;
+      padding: 0 14px;
+      cursor: pointer;
+      color: #05101a;
+      background: linear-gradient(135deg, var(--lime), var(--cyan));
+      font-weight: 800;
+    }
+
+    .button.secondary {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--line);
+    }
+
+    .button.warn {
+      color: #22080d;
+      background: linear-gradient(135deg, var(--gold), var(--red));
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(320px, 1fr) 380px;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .board-shell {
+      border-radius: 18px;
+      padding: clamp(10px, 2vw, 18px);
+    }
+
+    #board {
+      width: min(82vw, 640px);
+      max-width: 100%;
+      aspect-ratio: 1 / 1;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(8, minmax(0, 1fr));
+      grid-template-rows: repeat(8, minmax(0, 1fr));
+      border-radius: 8px;
+      overflow: hidden;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 24px 50px rgba(0, 0, 0, 0.38);
+      touch-action: manipulation;
+    }
+
+    .cell {
+      position: relative;
+      display: grid;
+      place-items: center;
+      border: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      min-width: 0;
+      min-height: 0;
+      aspect-ratio: 1 / 1;
+      font-size: clamp(1.65rem, 7vw, 3.4rem);
+      line-height: 1;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .cell.light {
+      background: var(--light-square);
+      color: #12201e;
+    }
+
+    .cell.dark {
+      background: var(--dark-square);
+      color: #f5fff8;
+    }
+
+    .cell.selected::after,
+    .cell.last-move::after {
+      content: "";
+      position: absolute;
+      inset: 7%;
+      border-radius: 6px;
+      border: 3px solid var(--selected);
+      pointer-events: none;
+    }
+
+    .cell.last-move::after {
+      border-color: rgba(117, 230, 255, 0.65);
+    }
+
+    .cell:disabled {
+      cursor: default;
+    }
+
+    .panel {
+      border-radius: 18px;
+      padding: 16px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .status-card {
+      padding: 14px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--line);
+      display: grid;
+      gap: 8px;
+    }
+
+    .status-card strong {
+      color: var(--cyan);
+      font-size: 1.08rem;
+    }
+
+    .status-card span,
+    .status-card p,
+    .connection-card p {
+      color: var(--muted);
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    .connection-card {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--line);
+    }
+
+    .connection-card h2,
+    .connection-card h3 {
+      margin: 0;
+      font-size: 1.08rem;
+    }
+
+    .connection-options.hidden,
+    .manual-connect.hidden,
+    .qr-wrap.hidden,
+    .copy-area.hidden {
+      display: none;
+    }
+
+    .connection-options {
+      display: grid;
+      gap: 10px;
+    }
+
+    .manual-connect {
+      display: grid;
+      gap: 12px;
+    }
+
+    .qr-wrap {
+      display: grid;
+      justify-items: center;
+      gap: 8px;
+      padding: 12px;
+      border-radius: 8px;
+      background: #fff;
+      color: #06101c;
+    }
+
+    #qrCanvas {
+      width: 220px;
+      height: 220px;
+      max-width: 100%;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 96px;
+      resize: vertical;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+      padding: 10px;
+    }
+
+    .copy-area {
+      display: grid;
+      gap: 8px;
+    }
+
+    .small-note {
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .move-log {
+      min-height: 72px;
+      max-height: 140px;
+      overflow: auto;
+      padding: 10px;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.2);
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 0.92rem;
+    }
+
+    @media (max-width: 900px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      #board {
+        width: min(94vw, 640px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <div class="brand">
+        <h1>Voxy Chess</h1>
+        <p>Play over local matchmaking, QR invite, or manual WebRTC codes.</p>
+      </div>
+      <div class="top-actions">
+        <button class="button" id="findMatchButton" type="button">Find Local Match</button>
+        <button class="button secondary" id="newBoardButton" type="button">Reset Board</button>
+        <a class="button secondary" href="index.html">Back to Hub</a>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="board-shell" aria-label="Chess board">
+        <div id="board"></div>
+      </section>
+
+      <aside class="panel">
+        <section class="status-card">
+          <strong id="connectionStatus">Not connected</strong>
+          <span id="turnStatus">Choose a connection type to begin.</span>
+          <div class="move-log" id="moveLog">No moves yet.</div>
+        </section>
+
+        <section class="connection-card">
+          <h2>Connection</h2>
+          <p id="searchStatus">Local search uses your localhost matchmaking server. If it does not connect in 30 seconds, more connection options appear here.</p>
+
+          <div class="connection-options hidden" id="connectionOptions">
+            <button class="button" id="retryLocalButton" type="button">Try Local Search Again</button>
+            <button class="button secondary" id="createQrButton" type="button">Create QR Invite</button>
+            <button class="button secondary" id="joinCodeButton" type="button">Join QR or Code</button>
+          </div>
+
+          <div class="manual-connect hidden" id="manualConnect">
+            <h3 id="manualTitle">Manual Connection</h3>
+            <p id="manualHelp"></p>
+
+            <div class="qr-wrap hidden" id="qrWrap">
+              <canvas id="qrCanvas" width="220" height="220"></canvas>
+              <span class="small-note" id="qrNote">Scan this QR with the other device.</span>
+            </div>
+
+            <div class="copy-area hidden" id="copyArea">
+              <textarea id="outgoingCode" readonly></textarea>
+              <div class="button-row">
+                <button class="button secondary" id="copyOutgoingButton" type="button">Copy Code</button>
+              </div>
+            </div>
+
+            <textarea id="incomingCode" placeholder="Paste an invite or answer code here"></textarea>
+            <div class="button-row">
+              <button class="button" id="applyIncomingButton" type="button">Use Pasted Code</button>
+              <button class="button secondary" id="cancelManualButton" type="button">Back</button>
+            </div>
+          </div>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+    const SERVER = "http://localhost:3000";
+    const searchLimitMs = 30000;
+    const qrScriptSources = [
+      "https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js",
+      "https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.3/qrcode.min.js"
+    ];
+    const pieces = {
+      p: "♟", r: "♜", n: "♞", b: "♝", q: "♛", k: "♚",
+      P: "♙", R: "♖", N: "♘", B: "♗", Q: "♕", K: "♔"
+    };
+
+    const boardEl = document.getElementById("board");
+    const connectionStatusEl = document.getElementById("connectionStatus");
+    const turnStatusEl = document.getElementById("turnStatus");
+    const moveLogEl = document.getElementById("moveLog");
+    const searchStatusEl = document.getElementById("searchStatus");
+    const connectionOptionsEl = document.getElementById("connectionOptions");
+    const manualConnectEl = document.getElementById("manualConnect");
+    const manualTitleEl = document.getElementById("manualTitle");
+    const manualHelpEl = document.getElementById("manualHelp");
+    const qrWrapEl = document.getElementById("qrWrap");
+    const qrCanvas = document.getElementById("qrCanvas");
+    const qrNoteEl = document.getElementById("qrNote");
+    const copyAreaEl = document.getElementById("copyArea");
+    const outgoingCodeEl = document.getElementById("outgoingCode");
+    const incomingCodeEl = document.getElementById("incomingCode");
+    const findMatchButton = document.getElementById("findMatchButton");
+    const retryLocalButton = document.getElementById("retryLocalButton");
+    const createQrButton = document.getElementById("createQrButton");
+    const joinCodeButton = document.getElementById("joinCodeButton");
+    const copyOutgoingButton = document.getElementById("copyOutgoingButton");
+    const applyIncomingButton = document.getElementById("applyIncomingButton");
+    const cancelManualButton = document.getElementById("cancelManualButton");
+    const newBoardButton = document.getElementById("newBoardButton");
+
+    let game = new Chess();
+    let pc = null;
+    let channel = null;
+    let roomId = null;
+    let role = null;
+    let myColor = "white";
+    let selected = null;
+    let isMyTurn = false;
+    let lastMove = null;
+    let searchTimeout = null;
+    let searchCountdown = null;
+    let answerPoll = null;
+    let manualMode = null;
+
+    function setConnectionStatus(text) {
+      connectionStatusEl.textContent = text;
+    }
+
+    function setSearchStatus(text) {
+      searchStatusEl.textContent = text;
+    }
+
+    function clearSearchTimers() {
+      clearTimeout(searchTimeout);
+      clearInterval(searchCountdown);
+      clearInterval(answerPoll);
+      searchTimeout = null;
+      searchCountdown = null;
+      answerPoll = null;
+    }
+
+    function createPeer(options = {}) {
+      const iceServers = options.compact
+        ? []
+        : [{ urls: "stun:stun.l.google.com:19302" }];
+
+      pc = new RTCPeerConnection({
+        iceServers
+      });
+
+      pc.onconnectionstatechange = () => {
+        if (pc.connectionState === "connected") markConnected();
+        if (["failed", "closed", "disconnected"].includes(pc.connectionState)) {
+          if (!channel || channel.readyState !== "open") {
+            setConnectionStatus("Connection interrupted");
+          }
+        }
+      };
+
+      return pc;
+    }
+
+    function closePeer() {
+      if (channel) channel.close();
+      if (pc) pc.close();
+      channel = null;
+      pc = null;
+    }
+
+    function resetBoard() {
+      game = new Chess();
+      selected = null;
+      lastMove = null;
+      isMyTurn = channel && channel.readyState === "open" && myColor === "white";
+      drawBoard();
+      updateTurnStatus();
+      moveLogEl.textContent = "No moves yet.";
+    }
+
+    function resetConnection() {
+      clearSearchTimers();
+      closePeer();
+      roomId = null;
+      role = null;
+      manualMode = null;
+      selected = null;
+      isMyTurn = false;
+      setConnectionStatus("Not connected");
+      setSearchStatus("Choose a connection type.");
+      connectionOptionsEl.classList.remove("hidden");
+      manualConnectEl.classList.add("hidden");
+      updateTurnStatus();
+      drawBoard();
+    }
+
+    function updateTurnStatus() {
+      if (isGameOver()) {
+        if (isCheckmate()) {
+          turnStatusEl.textContent = game.turn() === "w" ? "Black wins by checkmate." : "White wins by checkmate.";
+        } else {
+          turnStatusEl.textContent = "Game over.";
+        }
+        return;
+      }
+
+      if (!channel || channel.readyState !== "open") {
+        turnStatusEl.textContent = "Waiting for a connection.";
+        return;
+      }
+
+      const turnColor = game.turn() === "w" ? "white" : "black";
+      turnStatusEl.textContent = isMyTurn
+        ? `Your move. You are ${myColor}.`
+        : `Waiting for ${turnColor}. You are ${myColor}.`;
+    }
+
+    function chessFlag(names) {
+      for (const name of names) {
+        if (typeof game[name] === "function") return game[name]();
+      }
+      return false;
+    }
+
+    function isGameOver() {
+      return chessFlag(["isGameOver", "game_over"]);
+    }
+
+    function isCheckmate() {
+      return chessFlag(["isCheckmate", "in_checkmate"]);
+    }
+
+    function drawBoard() {
+      boardEl.innerHTML = "";
+      const files = myColor === "black" ? "hgfedcba".split("") : "abcdefgh".split("");
+      const ranks = myColor === "black" ? [1, 2, 3, 4, 5, 6, 7, 8] : [8, 7, 6, 5, 4, 3, 2, 1];
+
+      ranks.forEach(rank => {
+        files.forEach(file => {
+          const square = `${file}${rank}`;
+          const piece = game.get(square);
+          const fileIndex = "abcdefgh".indexOf(file);
+          const isDark = (fileIndex + rank) % 2 === 1;
+          const cell = document.createElement("button");
+          cell.type = "button";
+          cell.className = `cell ${isDark ? "dark" : "light"}`;
+          cell.disabled = !isMyTurn || isGameOver();
+          cell.setAttribute("aria-label", square);
+
+          if (piece) {
+            const key = piece.color === "w" ? piece.type.toUpperCase() : piece.type;
+            cell.textContent = pieces[key];
+          }
+
+          if (selected === square) cell.classList.add("selected");
+          if (lastMove && (lastMove.from === square || lastMove.to === square)) {
+            cell.classList.add("last-move");
+          }
+
+          cell.addEventListener("click", () => handleSquare(square));
+          cell.addEventListener("touchstart", event => {
+            event.preventDefault();
+            handleSquare(square);
+          }, { passive: false });
+
+          boardEl.appendChild(cell);
+        });
+      });
+    }
+
+    function handleSquare(square) {
+      if (!isMyTurn || isGameOver()) return;
+
+      if (!selected) {
+        const piece = game.get(square);
+        const expectedColor = myColor === "white" ? "w" : "b";
+        if (!piece || piece.color !== expectedColor) return;
+        selected = square;
+        drawBoard();
+        return;
+      }
+
+      const moveRequest = { from: selected, to: square, promotion: "q" };
+      const move = game.move(moveRequest);
+      if (move) {
+        lastMove = { from: move.from, to: move.to };
+        sendMessage({ type: "move", move: moveRequest });
+        isMyTurn = false;
+        appendMove(move.san);
+      }
+
+      selected = null;
+      drawBoard();
+      updateTurnStatus();
+    }
+
+    function appendMove(san) {
+      const history = game.history();
+      moveLogEl.textContent = history.length ? history.join("  ") : san;
+    }
+
+    function sendMessage(payload) {
+      if (!channel || channel.readyState !== "open") {
+        setConnectionStatus("Move not sent: no open connection");
+        return;
+      }
+      channel.send(JSON.stringify(payload));
+    }
+
+    function attachChannel(nextChannel) {
+      channel = nextChannel;
+      channel.onopen = markConnected;
+      channel.onclose = () => {
+        isMyTurn = false;
+        setConnectionStatus("Disconnected");
+        updateTurnStatus();
+        drawBoard();
+      };
+      channel.onmessage = event => {
+        const data = JSON.parse(event.data);
+        if (data.type === "move") {
+          const move = game.move(data.move);
+          if (move) {
+            lastMove = { from: move.from, to: move.to };
+            isMyTurn = !isGameOver();
+            appendMove(move.san);
+            drawBoard();
+            updateTurnStatus();
+          }
+        }
+        if (data.type === "reset") {
+          game = new Chess();
+          selected = null;
+          lastMove = null;
+          isMyTurn = myColor === "white";
+          moveLogEl.textContent = "Board reset by opponent.";
+          drawBoard();
+          updateTurnStatus();
+        }
+      };
+    }
+
+    function markConnected() {
+      clearSearchTimers();
+      connectionOptionsEl.classList.add("hidden");
+      manualConnectEl.classList.add("hidden");
+      setConnectionStatus("Connected");
+      setSearchStatus("Connection ready. Good luck.");
+      isMyTurn = myColor === "white" && game.turn() === "w";
+      updateTurnStatus();
+      drawBoard();
+    }
+
+    function startSearchTimer() {
+      const startedAt = Date.now();
+      clearSearchTimers();
+
+      searchCountdown = setInterval(() => {
+        const remaining = Math.max(0, Math.ceil((searchLimitMs - (Date.now() - startedAt)) / 1000));
+        setSearchStatus(`Searching for a local opponent... ${remaining}s`);
+      }, 250);
+
+      searchTimeout = setTimeout(() => {
+        showConnectionOptions("No local opponent connected after 30 seconds. Choose another connection type below.");
+      }, searchLimitMs);
+    }
+
+    function showConnectionOptions(message) {
+      clearSearchTimers();
+      closePeer();
+      isMyTurn = false;
+      connectionOptionsEl.classList.remove("hidden");
+      manualConnectEl.classList.add("hidden");
+      setConnectionStatus("Choose connection type");
+      setSearchStatus(message);
+      updateTurnStatus();
+      drawBoard();
+    }
+
+    async function findMatch() {
+      clearSearchTimers();
+      closePeer();
+      resetBoard();
+      createPeer();
+      connectionOptionsEl.classList.add("hidden");
+      manualConnectEl.classList.add("hidden");
+      setConnectionStatus("Searching");
+      startSearchTimer();
+
+      try {
+        const res = await fetch(`${SERVER}/find`, { method: "POST" });
+        if (!res.ok) throw new Error("Matchmaking server returned an error.");
+        const data = await res.json();
+        roomId = data.room;
+        role = data.role;
+        setConnectionStatus(`Matched as ${role}`);
+
+        if (role === "offerer") await startOfferer();
+        else await startAnswerer();
+      } catch (error) {
+        showConnectionOptions("Local matchmaking is not reachable right now. Choose QR invite or manual code instead.");
+      }
+    }
+
+    async function startOfferer() {
+      myColor = "white";
+      attachChannel(pc.createDataChannel("game"));
+      await pc.setLocalDescription(await pc.createOffer());
+      await waitForIceGathering();
+
+      await fetch(`${SERVER}/offer/${roomId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(pc.localDescription)
+      });
+
+      pollAnswer();
+    }
+
+    async function startAnswerer() {
+      myColor = "black";
+      pc.ondatachannel = event => attachChannel(event.channel);
+      const offer = await waitForServerJson(`${SERVER}/offer/${roomId}`);
+      await pc.setRemoteDescription(offer);
+      await pc.setLocalDescription(await pc.createAnswer());
+      await waitForIceGathering();
+
+      await fetch(`${SERVER}/answer/${roomId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(pc.localDescription)
+      });
+
+      setConnectionStatus("Answer sent");
+      setSearchStatus("Waiting for the data channel to open.");
+    }
+
+    function pollAnswer() {
+      answerPoll = setInterval(async () => {
+        try {
+          const res = await fetch(`${SERVER}/answer/${roomId}`);
+          if (res.status === 200) {
+            const answer = await res.json();
+            await pc.setRemoteDescription(answer);
+            clearInterval(answerPoll);
+            answerPoll = null;
+            setConnectionStatus("Answer received");
+            setSearchStatus("Connecting the chess board.");
+          }
+        } catch (error) {
+          showConnectionOptions("The local match was found, but the answer could not be loaded. Try QR invite or manual code.");
+        }
+      }, 1000);
+    }
+
+    async function waitForServerJson(url) {
+      const startedAt = Date.now();
+      while (Date.now() - startedAt < searchLimitMs) {
+        const res = await fetch(url);
+        if (res.status === 200) return res.json();
+        await wait(1000);
+      }
+      throw new Error("Timed out waiting for server data.");
+    }
+
+    async function waitForIceGathering() {
+      if (!pc || pc.iceGatheringState === "complete") return;
+      await new Promise(resolve => {
+        const done = () => {
+          if (!pc || pc.iceGatheringState === "complete") {
+            pc?.removeEventListener("icegatheringstatechange", done);
+            resolve();
+          }
+        };
+        pc.addEventListener("icegatheringstatechange", done);
+        setTimeout(resolve, 5000);
+      });
+    }
+
+    function wait(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    async function createQrInvite() {
+      clearSearchTimers();
+      closePeer();
+      resetBoard();
+      createPeer({ compact: true });
+      myColor = "white";
+      manualMode = "host-answer";
+      attachChannel(pc.createDataChannel("game"));
+      setConnectionStatus("Creating QR invite");
+      setSearchStatus("Building a direct WebRTC invite.");
+
+      await pc.setLocalDescription(await pc.createOffer());
+      await waitForIceGathering();
+
+      const code = await encodeSignal({
+        kind: "voxy-chess-offer",
+        version: 1,
+        description: pc.localDescription
+      });
+      const inviteUrl = createSignalUrl("join", code);
+
+      showManualPanel({
+        title: "QR invite ready",
+        help: "Let the other player scan this QR or send them the code. They will get an answer code that you paste back here.",
+        outgoing: inviteUrl,
+        incomingPlaceholder: "Paste the other player's answer code here",
+        qrText: inviteUrl,
+        qrNote: "Player two scans this to join."
+      });
+    }
+
+    function showJoinPanel() {
+      clearSearchTimers();
+      closePeer();
+      resetBoard();
+      manualMode = "join-offer";
+      showManualPanel({
+        title: "Join QR or Code",
+        help: "Paste a QR invite URL or invite code from the host. This device will become black and create an answer code.",
+        outgoing: "",
+        incomingPlaceholder: "Paste the host invite URL or code here"
+      });
+    }
+
+    function showManualPanel(options) {
+      connectionOptionsEl.classList.add("hidden");
+      manualConnectEl.classList.remove("hidden");
+      manualTitleEl.textContent = options.title;
+      manualHelpEl.textContent = options.help;
+      incomingCodeEl.value = "";
+      incomingCodeEl.placeholder = options.incomingPlaceholder || "Paste a code here";
+      incomingCodeEl.disabled = false;
+      applyIncomingButton.disabled = false;
+
+      if (options.outgoing) {
+        copyAreaEl.classList.remove("hidden");
+        outgoingCodeEl.value = options.outgoing;
+      } else {
+        copyAreaEl.classList.add("hidden");
+        outgoingCodeEl.value = "";
+      }
+
+      if (options.qrText) {
+        qrWrapEl.classList.remove("hidden");
+        qrNoteEl.textContent = options.qrNote || "Scan this QR with the other device.";
+        renderQr(options.qrText);
+      } else {
+        qrWrapEl.classList.add("hidden");
+      }
+    }
+
+    async function applyIncomingCode() {
+      const raw = incomingCodeEl.value.trim();
+      if (!raw) return;
+
+      try {
+        const payload = await decodeSignalFromText(raw);
+        if (manualMode === "host-answer") {
+          if (payload.kind !== "voxy-chess-answer") throw new Error("That is not an answer code.");
+          await pc.setRemoteDescription(payload.description);
+          setConnectionStatus("Answer accepted");
+          setSearchStatus("Connecting the direct channel.");
+          return;
+        }
+
+        if (payload.kind !== "voxy-chess-offer") throw new Error("That is not an invite code.");
+        await joinFromOffer(payload);
+      } catch (error) {
+        setConnectionStatus("Code not accepted");
+        setSearchStatus(error.message || "The pasted connection code could not be read.");
+      }
+    }
+
+    async function joinFromOffer(payload) {
+      clearSearchTimers();
+      closePeer();
+      resetBoard();
+      createPeer({ compact: true });
+      myColor = "black";
+      manualMode = "join-answer";
+      pc.ondatachannel = event => attachChannel(event.channel);
+      setConnectionStatus("Creating answer");
+
+      await pc.setRemoteDescription(payload.description);
+      await pc.setLocalDescription(await pc.createAnswer());
+      await waitForIceGathering();
+
+      const code = await encodeSignal({
+        kind: "voxy-chess-answer",
+        version: 1,
+        description: pc.localDescription
+      });
+      const answerUrl = createSignalUrl("answer", code);
+
+      showManualPanel({
+        title: "Answer ready",
+        help: "Send this answer back to the host. The host pastes it into their waiting page to finish the connection.",
+        outgoing: answerUrl,
+        incomingPlaceholder: "No more code needed on this device",
+        qrText: answerUrl,
+        qrNote: "Host needs this answer code."
+      });
+      incomingCodeEl.disabled = true;
+      applyIncomingButton.disabled = true;
+      setSearchStatus("Waiting for the host to apply your answer.");
+    }
+
+    async function ensureQrLibrary() {
+      if (window.QRCode) return true;
+
+      for (const src of qrScriptSources) {
+        const loaded = await new Promise(resolve => {
+          const script = document.createElement("script");
+          script.src = src;
+          script.async = true;
+          script.onload = () => resolve(true);
+          script.onerror = () => resolve(false);
+          document.head.appendChild(script);
+        });
+
+        if (loaded && window.QRCode) return true;
+      }
+
+      return false;
+    }
+
+    async function renderQr(text) {
+      const context = qrCanvas.getContext("2d");
+      context.clearRect(0, 0, qrCanvas.width, qrCanvas.height);
+
+      if (!(await ensureQrLibrary())) {
+        qrWrapEl.classList.add("hidden");
+        setSearchStatus("QR library did not load. Use the copyable code instead.");
+        return;
+      }
+
+      const drawQr = async value => {
+        await QRCode.toCanvas(qrCanvas, value, {
+          width: 220,
+          margin: 1,
+          errorCorrectionLevel: "L",
+          color: {
+            dark: "#06101c",
+            light: "#ffffff"
+          }
+        });
+      };
+
+      try {
+        await drawQr(text);
+      } catch (error) {
+        try {
+          const compactCode = extractSignalCode(text);
+          await drawQr(compactCode);
+          qrNoteEl.textContent = "Scan this compact code, then paste it on the join screen if your camera app does not open it automatically.";
+          setSearchStatus("QR shown as compact signal text because the full invite URL was too large.");
+        } catch (fallbackError) {
+          qrWrapEl.classList.add("hidden");
+          setSearchStatus("This signal is too large for a reliable QR. Use the copyable code instead.");
+        }
+      }
+    }
+
+    function createSignalUrl(key, code) {
+      const base = location.href.split("#")[0];
+      return `${base}#${key}=${code}`;
+    }
+
+    function extractSignalCode(text) {
+      const trimmed = text.trim();
+      if (!trimmed) throw new Error("No code was pasted.");
+
+      try {
+        const url = new URL(trimmed);
+        const hash = url.hash.replace(/^#/, "");
+        const params = new URLSearchParams(hash);
+        return params.get("join") || params.get("answer") || trimmed;
+      } catch (error) {
+        const hash = trimmed.includes("#") ? trimmed.slice(trimmed.indexOf("#") + 1) : trimmed;
+        const params = new URLSearchParams(hash);
+        return params.get("join") || params.get("answer") || trimmed;
+      }
+    }
+
+    async function encodeSignal(payload) {
+      const compactPayload = {
+        k: payload.kind === "voxy-chess-offer" ? "o" : "a",
+        v: 1,
+        t: payload.description.type,
+        s: payload.description.sdp
+      };
+      const json = JSON.stringify(compactPayload);
+      if ("CompressionStream" in window) {
+        const compressed = await gzip(json);
+        return `gz.${toBase64Url(compressed)}`;
+      }
+      return `js.${toBase64Url(new TextEncoder().encode(json))}`;
+    }
+
+    async function decodeSignalFromText(text) {
+      const code = extractSignalCode(text);
+      const prefix = code.slice(0, 3);
+      const data = fromBase64Url(code.slice(3));
+      let payload;
+
+      if (prefix === "gz.") {
+        if (!("DecompressionStream" in window)) {
+          throw new Error("This browser cannot read compressed signal codes.");
+        }
+        payload = JSON.parse(await gunzip(data));
+        return normalizeSignal(payload);
+      }
+
+      if (prefix === "js.") {
+        payload = JSON.parse(new TextDecoder().decode(data));
+        return normalizeSignal(payload);
+      }
+
+      payload = JSON.parse(new TextDecoder().decode(fromBase64Url(code)));
+      return normalizeSignal(payload);
+    }
+
+    function normalizeSignal(payload) {
+      if (payload.k) {
+        return {
+          kind: payload.k === "o" ? "voxy-chess-offer" : "voxy-chess-answer",
+          version: payload.v || 1,
+          description: {
+            type: payload.t,
+            sdp: payload.s
+          }
+        };
+      }
+
+      return payload;
+    }
+
+    async function gzip(text) {
+      const stream = new CompressionStream("gzip");
+      const writer = stream.writable.getWriter();
+      writer.write(new TextEncoder().encode(text));
+      writer.close();
+      return new Uint8Array(await new Response(stream.readable).arrayBuffer());
+    }
+
+    async function gunzip(bytes) {
+      const stream = new DecompressionStream("gzip");
+      const writer = stream.writable.getWriter();
+      writer.write(bytes);
+      writer.close();
+      return new TextDecoder().decode(await new Response(stream.readable).arrayBuffer());
+    }
+
+    function toBase64Url(bytes) {
+      let binary = "";
+      bytes.forEach(byte => {
+        binary += String.fromCharCode(byte);
+      });
+      return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    }
+
+    function fromBase64Url(code) {
+      const padded = code.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat((4 - code.length % 4) % 4);
+      const binary = atob(padded);
+      return Uint8Array.from(binary, char => char.charCodeAt(0));
+    }
+
+    async function copyOutgoing() {
+      if (!outgoingCodeEl.value) return;
+      try {
+        await navigator.clipboard.writeText(outgoingCodeEl.value);
+        setSearchStatus("Connection code copied.");
+      } catch (error) {
+        outgoingCodeEl.select();
+        setSearchStatus("Copy failed. The code is selected so you can copy it manually.");
+      }
+    }
+
+    function cancelManual() {
+      clearSearchTimers();
+      closePeer();
+      incomingCodeEl.disabled = false;
+      applyIncomingButton.disabled = false;
+      manualConnectEl.classList.add("hidden");
+      connectionOptionsEl.classList.remove("hidden");
+      setConnectionStatus("Choose connection type");
+      setSearchStatus("Pick local search, QR invite, or manual code.");
+    }
+
+    function handleHashInvite() {
+      const hash = location.hash.replace(/^#/, "");
+      const params = new URLSearchParams(hash);
+      const joinCode = params.get("join");
+      if (!joinCode) return;
+
+      showJoinPanel();
+      incomingCodeEl.value = joinCode;
+      applyIncomingCode();
+    }
+
+    findMatchButton.addEventListener("click", findMatch);
+    retryLocalButton.addEventListener("click", findMatch);
+    createQrButton.addEventListener("click", createQrInvite);
+    joinCodeButton.addEventListener("click", showJoinPanel);
+    copyOutgoingButton.addEventListener("click", copyOutgoing);
+    applyIncomingButton.addEventListener("click", applyIncomingCode);
+    cancelManualButton.addEventListener("click", cancelManual);
+    newBoardButton.addEventListener("click", () => {
+      const shouldNotify = channel && channel.readyState === "open";
+      resetBoard();
+      if (shouldNotify) sendMessage({ type: "reset" });
+    });
+
+    drawBoard();
+    updateTurnStatus();
+    handleHashInvite();
+  </script>
+</body>
+</html>

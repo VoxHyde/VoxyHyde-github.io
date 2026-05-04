@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Advanced D&D Character Builder</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; max-width: 600px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .input-group { margin-bottom: 10px; }
+        label { display: block; font-weight: bold; }
+        input, select, textarea { width: 100%; padding: 8px; box-sizing: border-box; }
+        #output { margin-top: 20px; padding: 15px; border: 2px solid #333; background: #f0f0f0; }
+    </style>
+</head>
+<body>
+
+    <h2>Character Creator</h2>
+
+    <div class="input-group">
+        <label>Character Name:</label>
+        <input type="text" id="name" placeholder="Enter name...">
+    </div>
+
+    <div class="grid">
+        <div class="input-group">
+            <label>Strength:</label>
+            <input type="number" id="str" value="10">
+        </div>
+        <div class="input-group">
+            <label>Dexterity:</label>
+            <input type="number" id="dex" value="10">
+        </div>
+        <div class="input-group">
+            <label>Constitution:</label>
+            <input type="number" id="con" value="10">
+        </div>
+        <div class="input-group">
+            <label>Intelligence:</label>
+            <input type="number" id="int" value="10">
+        </div>
+        <div class="input-group">
+            <label>Wisdom:</label>
+            <input type="number" id="wis" value="10">
+        </div>
+        <div class="input-group">
+            <label>Charisma:</label>
+            <input type="number" id="cha" value="10">
+        </div>
+    </div>
+
+    <div class="input-group">
+        <label>Backstory:</label>
+        <textarea id="story" rows="4" placeholder="Write your history here..."></textarea>
+    </div>
+
+    <button onclick="generateSheet()" style="padding: 10px 20px; cursor: pointer;">Finalize Character</button>
+
+    <div id="output"></div>
+
+    <script>
+        function generateSheet() {
+            const name = document.getElementById('name').value;
+            const stats = {
+                STR: document.getElementById('str').value,
+                DEX: document.getElementById('dex').value,
+                CON: document.getElementById('con').value,
+                INT: document.getElementById('int').value,
+                WIS: document.getElementById('wis').value,
+                CHA: document.getElementById('cha').value
+            };
+            const story = document.getElementById('story').value;
+
+            let outputHTML = `<h3>${name || 'Unnamed Character'}</h3>`;
+            outputHTML += `<p><strong>Backstory:</strong> ${story || 'No history provided.'}</p>`;
+            outputHTML += `<ul>`;
+            for (let s in stats) {
+                outputHTML += `<li><strong>${s}:</strong> ${stats[s]}</li>`;
+            }
+            outputHTML += `</ul>`;
+            
+            document.getElementById('output').innerHTML = outputHTML;
+        }
+    </script>
+</body>
+</html>
