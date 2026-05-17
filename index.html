@@ -33,7 +33,9 @@
             --pink: #ff5edb;
             --shadow: 0 18px 54px rgba(0, 0, 0, 0.34);
             --radius: 24px;
-            --max-width: 1240px;
+            --max-width: 1440px;
+            --page-gutter: clamp(12px, 2.4vw, 34px);
+            --card-min: clamp(190px, 18vw, 250px);
             --wallpaper-ratio: 1.7777777778;
         }
 
@@ -113,7 +115,7 @@
             position: sticky;
             top: 0;
             z-index: 20;
-            padding: 16px 20px;
+            padding: clamp(12px, 1.6vw, 18px) var(--page-gutter);
             background: rgba(3, 7, 16, 0.88);
             border-bottom: 1px solid rgba(94, 242, 255, 0.12);
         }
@@ -210,9 +212,10 @@
         }
 
         main {
+            width: min(var(--max-width), 100%);
             max-width: var(--max-width);
             margin: 0 auto;
-            padding: 28px 20px 80px;
+            padding: clamp(18px, 2.4vw, 34px) var(--page-gutter) clamp(60px, 7vw, 96px);
         }
 
         .hero {
@@ -424,8 +427,8 @@
 
         .featured-grid {
             display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 14px;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 430px), 1fr));
+            gap: clamp(12px, 1.4vw, 18px);
         }
 
         .featured-card {
@@ -557,7 +560,7 @@
 
         .favorites-grid {
             grid-auto-flow: column;
-            grid-auto-columns: minmax(210px, 240px);
+            grid-auto-columns: clamp(190px, 22vw, 250px);
             overflow-x: auto;
             padding-bottom: 6px;
             scroll-snap-type: x proximity;
@@ -577,7 +580,7 @@
         }
 
         .game-grid {
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--card-min)), 1fr));
             margin-top: 20px;
         }
 
@@ -747,65 +750,9 @@
             font-size: 0.82rem;
         }
 
-        .loading-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 50;
-            display: grid;
-            place-items: center;
-            background: radial-gradient(circle at center, rgba(7, 18, 33, 0.8), rgba(2, 6, 14, 0.96));
-            transition: opacity 320ms ease, visibility 320ms ease;
-        }
-
-        .loading-overlay.hidden {
-            opacity: 0;
-            visibility: hidden;
-        }
-
-        .loading-box {
-            width: min(92vw, 520px);
-            padding: 26px;
-            border-radius: 24px;
-            background: rgba(12, 18, 34, 0.94);
-            border: 1px solid rgba(94, 242, 255, 0.16);
-            text-align: center;
-            box-shadow: 0 18px 56px rgba(0, 0, 0, 0.42);
-        }
-
-        .loading-box strong {
-            display: block;
-            color: var(--cyan);
-            font-family: "Press Start 2P", monospace;
-            font-size: 0.76rem;
-            line-height: 1.7;
-        }
-
-        .loading-bar {
-            height: 12px;
-            margin-top: 18px;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.08);
-            overflow: hidden;
-        }
-
-        .loading-bar span {
-            display: block;
-            width: 45%;
-            height: 100%;
-            border-radius: inherit;
-            background: linear-gradient(135deg, var(--cyan), var(--lime));
-            animation: loadingShift 1.2s ease-in-out infinite;
-        }
-
-        @keyframes loadingShift {
-            0% { transform: translateX(-110%); }
-            100% { transform: translateX(240%); }
-        }
-
         @media (max-width: 1024px) {
             .topbar-inner,
             .toolbar,
-            .featured-grid,
             .spotlight-grid,
             .leaderboard-grid {
                 grid-template-columns: 1fr;
@@ -823,14 +770,6 @@
         }
 
         @media (max-width: 720px) {
-            .topbar {
-                padding: 14px;
-            }
-
-            main {
-                padding: 18px 14px 60px;
-            }
-
             .hero-copy,
             .toolbar,
             .favorites-panel,
@@ -880,13 +819,6 @@
 </head>
 <body>
     <div class="wallpaper-stage" aria-hidden="true"></div>
-    <div class="loading-overlay" id="loadingOverlay" aria-live="polite">
-        <div class="loading-box">
-            <strong>LOADING ARCADE LOBBY...</strong>
-            <p class="section-copy">Warming up the cabinets.</p>
-            <div class="loading-bar" aria-hidden="true"><span></span></div>
-        </div>
-    </div>
 
     <header class="topbar">
         <div class="topbar-inner">
@@ -1053,14 +985,15 @@
             { id: "minesweeper", title: "Minesweeper", href: "minesweeper.html", image: "minesweeper.png", alt: "Minesweeper", genre: "Puzzle", rating: 4.5, playtime: "10 min", difficulty: "Medium", popularity: "Classic", description: "A familiar puzzle cabinet for careful clicks and clean clears." },
             { id: "coop-game", title: "Co-op Game", href: "dual.html", image: "dual.png", alt: "Co-op game", genre: "Multiplayer", rating: 4.6, playtime: "15 min", difficulty: "Medium", popularity: "Party pick", description: "Grab a second player and turn the lobby into a local showdown." },
             { id: "drifter", title: "Drifter", href: "drift.html", image: "drift.png", alt: "Drifter", genre: "Action", rating: 4.3, playtime: "9 min", difficulty: "Hard", popularity: "Late-night mode", description: "Slide through corners and chase cleaner lines every run." },
-            { id: "chess", title: "Chess", href: "1v1.html", image: "geminichess.png", alt: "Chess", genre: "Multiplayer", rating: 5.0, playtime: "15 yrs", difficulty: "Who r u playin?", popularity: "Chess pick", description: "Bro it's just chess." },
+            { id: "chess", title: "Chess", href: "chess.html", image: "Geminichess.png", alt: "Chess", genre: "Multiplayer", rating: 5.0, playtime: "15 yrs", difficulty: "Who r u playin?", popularity: "Chess pick", description: "Bro it's just chess." },
             { id: "spaceship-for-two", title: "Spaceship for Two", href: "spaceshipper.html", image: "dualspaceship.png", alt: "Spaceship for two", genre: "Multiplayer", rating: 4.6, playtime: "14 min", difficulty: "Medium", popularity: "Co-op favorite", description: "Pilot together and keep the run alive longer than either could solo." },
             { id: "tycoon-clicker", title: "Tycoon Clicker", href: "Tycoon.html", image: "tycoon.png", alt: "Tycoon clicker", genre: "Idle", rating: 4.2, playtime: "30 min", difficulty: "Easy", popularity: "Chill grind", description: "An easygoing cabinet for upgrades, loops, and steady progress." },
             { id: "playground-3d", title: "3D Playground", href: "3d2.html", image: "3dbase.png", alt: "3D playground", genre: "Action", rating: 4.1, playtime: "11 min", difficulty: "Easy", popularity: "Sandbox", description: "A playful 3D cabinet built for quick messing around." },
             { id: "avoid-it", title: "Avoid-it!", href: "slope.html", image: "avoidit.png", alt: "Avoid-it", genre: "Action", rating: 4.4, playtime: "7 min", difficulty: "Hard", popularity: "Reflex test", description: "Fast movement and just-one-more-run energy all the way through." },
             { id: "pulse-pit", title: "Pulse Pit", href: "last.html", image: "pulsepit.png", alt: "Pulse Pit", genre: "Action", rating: 4.7, playtime: "13 min", difficulty: "Hard", popularity: "Arena hype", description: "A punchy arena cabinet with lights, movement, and pressure." },
-            { id: "passians", title: "Passians", href: "passians.html", image: "passians.png", alt: "Passians patience card game", genre: "Puzzle", rating: 4.6, playtime: "14 min", difficulty: "Medium", popularity: "Fresh table", description: "A patience-style pyramid card game with move counting and a local winners board." },
-                ];
+            { id: "card", title: "Cary Pyramid", href: "card.html", image: "passians.png", alt: "idk tbh", genre: "Puzzle", rating: 4.6, playtime: "14 min", difficulty: "Medium", popularity: "Fresh table", description: "A patience-style pyramid card game with move counting and a local winners board." },
+            { id: "passians", title: "Passians", href: "passiansz.html", image: "actualpassiansz.png", alt: "Passians patience card game", genre: "Puzzle", rating: 4.4, playtime: "10 min", difficulty: "Medium", popularity: "Peak experience", description: "Solitaire" },
+            ];
 
         const favoriteKey = "voxyArcadeFavorites";
         const recentKey = "voxyArcadeRecent";
@@ -1084,7 +1017,6 @@
         const gameCount = document.getElementById("gameCount");
         const featuredDay = document.getElementById("featuredDay");
         const favoritesShortcut = document.getElementById("favoritesShortcut");
-        const loadingOverlay = document.getElementById("loadingOverlay");
 
         function loadStore(key) {
             try {
@@ -1411,12 +1343,6 @@
         });
 
         renderAll();
-
-        window.addEventListener("load", () => {
-            window.setTimeout(() => {
-                loadingOverlay.classList.add("hidden");
-            }, 350);
-        });
     </script>
 </body>
 </html>

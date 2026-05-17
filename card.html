@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Passians</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <style>
+        :root {
+            --bg-top: #0f1c33;
+            --bg-bottom: #08101f;
+            --panel: rgba(10, 16, 31, 0.88);
+            --panel-soft: rgba(255, 255, 255, 0.06);
+            --line: rgba(255, 255, 255, 0.1);
+            --text: #eef6ff;
+            --muted: #a7b9d6;
+            --accent: #6ef2ff;
+            --gold: #ffd36f;
+            --green: #7cff9b;
+            --red: #ff7e9d;
+            --shadow: 0 18px 48px rgba(0, 0, 0, 0.35);
+            --card-w: 84px;
+            --card-h: 116px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at top left, rgba(110, 242, 255, 0.14), transparent 26%),
+                radial-gradient(circle at top right, rgba(255, 211, 111, 0.14), transparent 24%),
+                linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
+        }
+
+        .page {
+            width: min(1200px, calc(100% - 24px));
+            margin: 0 auto;
+            padding: 20px 0 88px;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+            padding: 18px 20px;
+            border-radius: 24px;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            box-shadow: var(--shadow);
+        }
+
+        .title-wrap h1 {
+            margin: 0;
+            font-size: clamp(2rem, 4vw, 3rem);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .title-wrap p {
+            margin: 8px 0 0;
+            color: var(--muted);
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .button {
+            border: none;
+            cursor: pointer;
+            min-height: 46px;
+            padding: 0 18px;
+            border-radius: 999px;
+            font-weight: 800;
+            color: #08101f;
+            background: linear-gradient(135deg, var(--gold), var(--accent));
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.26);
+        }
+
+        .button.secondary {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--line);
+            box-shadow: none;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 320px;
+            gap: 18px;
+            margin-top: 18px;
+        }
+
+        .board-panel,
+        .side-panel,
+        .leaderboard,
+        .howto-modal {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        .board-panel {
+            padding: 20px;
+        }
+
+        .status-bar {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .status-chip {
+            padding: 14px;
+            border-radius: 18px;
+            background: var(--panel-soft);
+            border: 1px solid var(--line);
+        }
+
+        .status-chip strong {
+            display: block;
+            font-size: 1.4rem;
+            color: var(--accent);
+            margin-bottom: 4px;
+        }
+
+        .status-chip span {
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+
+        .playfield {
+            display: grid;
+            gap: 18px;
+        }
+
+        .top-row {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, auto)) 1fr;
+            gap: 14px;
+            align-items: start;
+        }
+
+        .card-slot,
+        .draw-stack,
+        .waste-pile {
+            width: var(--card-w);
+            height: var(--card-h);
+            border-radius: 16px;
+            border: 1px dashed rgba(255, 255, 255, 0.18);
+            background: rgba(255, 255, 255, 0.03);
+            position: relative;
+        }
+
+        .pair-tray {
+            display: grid;
+            grid-template-columns: repeat(2, auto);
+            gap: 12px;
+            align-items: start;
+        }
+
+        .slot-wrap {
+            display: grid;
+            gap: 6px;
+            justify-items: center;
+        }
+
+        .slot-label {
+            color: var(--muted);
+            font-size: 0.78rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .deck-info {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 14px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--line);
+            min-height: var(--card-h);
+        }
+
+        .deck-info p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        .pyramid {
+            position: relative;
+            min-height: 550px;
+            border-radius: 24px;
+            background:
+                radial-gradient(circle at top center, rgba(110, 242, 255, 0.06), transparent 30%),
+                rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--line);
+            overflow: auto;
+            padding: 12px;
+        }
+
+        .card {
+            position: absolute;
+            width: var(--card-w);
+            height: var(--card-h);
+            border-radius: 16px;
+            background: linear-gradient(180deg, #fffdf7, #dde9ff);
+            color: #0f1730;
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.22);
+            border: 2px solid rgba(8, 16, 31, 0.08);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 10px;
+            cursor: pointer;
+            user-select: none;
+            transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease, opacity 150ms ease;
+        }
+
+        .card.red {
+            color: #b81f3b;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 18px 28px rgba(0, 0, 0, 0.28);
+        }
+
+        .card.selected {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(110, 242, 255, 0.4), 0 18px 28px rgba(0, 0, 0, 0.3);
+            transform: translateY(-8px);
+        }
+
+        .card.blocked {
+            opacity: 0.74;
+        }
+
+        .card.cleared {
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .card-value {
+            font-size: 1.25rem;
+            font-weight: 900;
+        }
+
+        .card-suit {
+            font-size: 1.1rem;
+        }
+
+        .card-center {
+            align-self: center;
+            font-size: 2rem;
+            font-weight: 900;
+        }
+
+        .back {
+            background:
+                linear-gradient(135deg, rgba(110, 242, 255, 0.18), rgba(255, 211, 111, 0.18)),
+                #0f1730;
+            border: 2px solid rgba(255, 255, 255, 0.08);
+            color: var(--text);
+            display: grid;
+            place-items: center;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+        }
+
+        .side-panel {
+            padding: 18px;
+            display: grid;
+            gap: 16px;
+            align-content: start;
+        }
+
+        .panel-block {
+            padding: 16px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--line);
+        }
+
+        .panel-block h2,
+        .panel-block h3 {
+            margin: 0 0 10px;
+        }
+
+        .panel-block p,
+        .panel-block li {
+            color: var(--muted);
+            line-height: 1.55;
+        }
+
+        .leaderboard-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .leader-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--line);
+        }
+
+        .leader-row strong {
+            color: var(--gold);
+        }
+
+        .name-entry {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 14px;
+        }
+
+        .name-entry input {
+            flex: 1 1 180px;
+            min-height: 44px;
+            border-radius: 14px;
+            border: 1px solid var(--line);
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text);
+            padding: 0 14px;
+        }
+
+        .help-button {
+            position: fixed;
+            left: 18px;
+            bottom: 18px;
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            background: rgba(10, 16, 31, 0.92);
+            color: var(--text);
+            font-size: 1.4rem;
+            font-weight: 900;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            z-index: 30;
+        }
+
+        .howto-modal {
+            position: fixed;
+            left: 18px;
+            bottom: 84px;
+            width: min(360px, calc(100vw - 36px));
+            padding: 18px;
+            z-index: 30;
+            display: none;
+        }
+
+        .howto-modal.open {
+            display: block;
+        }
+
+        .howto-modal h3 {
+            margin: 0 0 10px;
+        }
+
+        .howto-modal ul {
+            margin: 0;
+            padding-left: 18px;
+        }
+
+        .win-banner {
+            margin-top: 12px;
+            padding: 14px;
+            border-radius: 18px;
+            background: rgba(124, 255, 155, 0.1);
+            border: 1px solid rgba(124, 255, 155, 0.26);
+            color: var(--green);
+            display: none;
+        }
+
+        .win-banner.show {
+            display: block;
+        }
+
+        .lose-banner {
+            margin-top: 12px;
+            padding: 14px;
+            border-radius: 18px;
+            background: rgba(255, 126, 157, 0.1);
+            border: 1px solid rgba(255, 126, 157, 0.26);
+            color: var(--red);
+            display: none;
+        }
+
+        .lose-banner.show {
+            display: block;
+        }
+
+        @media (max-width: 980px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            .status-bar {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 640px) {
+            .page {
+                width: min(100%, calc(100% - 16px));
+                padding-top: 14px;
+            }
+
+            .topbar,
+            .board-panel,
+            .side-panel {
+                padding: 16px;
+            }
+
+            .status-bar {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .top-row {
+                grid-template-columns: repeat(2, auto);
+            }
+
+            .deck-info {
+                grid-column: 1 / -1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <header class="topbar">
+            <div class="title-wrap">
+                <h1>Passians</h1>
+                <p>Pyramid patience with a move counter and a local winners board.</p>
+            </div>
+            <div class="toolbar">
+                <a class="button secondary" href="index.html">Back to Hub</a>
+                <button class="button" id="newGameButton" type="button">New Game</button>
+            </div>
+        </header>
+
+        <div class="layout">
+            <section class="board-panel">
+                <div class="status-bar">
+                    <div class="status-chip">
+                        <strong id="moveCount">0</strong>
+                        <span>Moves</span>
+                    </div>
+                    <div class="status-chip">
+                        <strong id="cardsLeft">28</strong>
+                        <span>Pyramid Cards Left</span>
+                    </div>
+                    <div class="status-chip">
+                        <strong id="stockCount">24</strong>
+                        <span>Stock</span>
+                    </div>
+                    <div class="status-chip">
+                        <strong id="redealCount">1</strong>
+                        <span>Redeals Left</span>
+                    </div>
+                    <div class="status-chip">
+                        <strong id="wasteValue">--</strong>
+                        <span>Waste</span>
+                    </div>
+                </div>
+
+                <div class="playfield">
+                    <div class="top-row">
+                        <button class="draw-stack back" id="stockButton" type="button" aria-label="Draw card">DRAW</button>
+                        <div class="slot-wrap">
+                            <div class="slot-label">Waste</div>
+                            <div class="waste-pile" id="wastePile"></div>
+                        </div>
+                        <div class="pair-tray">
+                            <div class="slot-wrap">
+                                <div class="slot-label">Pair 1</div>
+                                <div class="card-slot" id="selectionSlotA"></div>
+                            </div>
+                            <div class="slot-wrap">
+                                <div class="slot-label">Pair 2</div>
+                                <div class="card-slot" id="selectionSlotB"></div>
+                            </div>
+                        </div>
+                        <div class="deck-info">
+                            <p>Clear the pyramid by removing exposed cards in pairs that total 13. Kings clear alone.</p>
+                            <p>The waste pile is optional. You can still clear two exposed pyramid cards together without using it.</p>
+                            <p>Draws come from the remaining deck, and when the stock runs out you get one redeal from the waste pile.</p>
+                            <p>New deals now start from a real shuffled 52-card deck, then bad or too-free boards get filtered out before the run begins.</p>
+                        </div>
+                    </div>
+
+                    <div class="pyramid" id="pyramid"></div>
+                </div>
+            </section>
+
+            <aside class="side-panel">
+                <section class="panel-block">
+                    <h2>Local Leaderboard</h2>
+                    <p>Best runs on this device, ranked by the fewest moves.</p>
+                    <div class="leaderboard-list" id="leaderboardList"></div>
+                    <div class="win-banner" id="winBanner"></div>
+                    <div class="lose-banner" id="loseBanner"></div>
+                    <div class="name-entry">
+                        <input id="playerName" type="text" maxlength="18" placeholder="Name for the board">
+                        <button class="button" id="saveScoreButton" type="button" disabled>Save</button>
+                    </div>
+                </section>
+
+                <section class="panel-block">
+                    <h3>Card Values</h3>
+                    <p>A = 1, J = 11, Q = 12, K = 13.</p>
+                    <p>Ace does not count as 10 in this version.</p>
+                    <p>Any two exposed cards that add to 13 can be cleared together.</p>
+                </section>
+
+                <section class="panel-block">
+                    <h3>Quick Tips</h3>
+                    <p>Try to clear cards from the lower rows first so you uncover more possible pairs.</p>
+                    <p>If a card is covering another, it cannot be selected yet.</p>
+                    <p>The deal still has randomness, but it should now feel like a real deck instead of an over-scripted free win.</p>
+                </section>
+            </aside>
+        </div>
+    </div>
+
+    <button class="help-button" id="helpButton" type="button" aria-label="How to play">?</button>
+    <div class="howto-modal" id="helpModal">
+        <h3>How to Play</h3>
+        <ul>
+            <li>Click any exposed pyramid card to select it.</li>
+            <li>Select another exposed card so the two values add up to 13.</li>
+            <li>Kings are worth 13, so they clear by themselves.</li>
+            <li>Aces are worth 1 here, not 10.</li>
+            <li>Use `Draw` to flip the next stock card into the waste pile.</li>
+            <li>Each new deal starts from a normal 52-card shuffle and gets filtered so the run has a real winning path.</li>
+            <li>Clear the whole pyramid to win, then save your name to the local leaderboard.</li>
+        </ul>
+    </div>
+
+    <script>
+        const suits = ["hearts", "diamonds", "clubs", "spades"];
+        const suitMarks = { hearts: "♥", diamonds: "♦", clubs: "♣", spades: "♠" };
+        const rankLabels = { 1: "A", 11: "J", 12: "Q", 13: "K" };
+        const leaderboardKey = "voxyPassiansLeaderboard";
+        const pairRanks = [[1, 12], [2, 11], [3, 10], [4, 9], [5, 8], [6, 7]];
+        const pyramidRowSizes = [1, 2, 3, 4, 5, 6, 7];
+        const fullPyramidMask = (1 << 28) - 1;
+
+        const pyramidEl = document.getElementById("pyramid");
+        const wastePileEl = document.getElementById("wastePile");
+        const selectionSlotAEl = document.getElementById("selectionSlotA");
+        const selectionSlotBEl = document.getElementById("selectionSlotB");
+        const moveCountEl = document.getElementById("moveCount");
+        const cardsLeftEl = document.getElementById("cardsLeft");
+        const stockCountEl = document.getElementById("stockCount");
+        const redealCountEl = document.getElementById("redealCount");
+        const wasteValueEl = document.getElementById("wasteValue");
+        const leaderboardListEl = document.getElementById("leaderboardList");
+        const playerNameEl = document.getElementById("playerName");
+        const saveScoreButton = document.getElementById("saveScoreButton");
+        const winBannerEl = document.getElementById("winBanner");
+        const loseBannerEl = document.getElementById("loseBanner");
+        const stockButton = document.getElementById("stockButton");
+        const newGameButton = document.getElementById("newGameButton");
+        const helpButton = document.getElementById("helpButton");
+        const helpModal = document.getElementById("helpModal");
+
+        const state = {
+            pyramid: [],
+            stock: [],
+            waste: [],
+            selected: [],
+            moves: 0,
+            won: false,
+            lost: false,
+            redealsLeft: 1,
+            scoreSaved: false
+        };
+
+        function getPyramidIndex(row, col) {
+            return (row * (row + 1)) / 2 + col;
+        }
+
+        const pyramidMeta = [];
+        const pyramidChildren = [];
+        for (let row = 0; row < 7; row += 1) {
+            for (let col = 0; col <= row; col += 1) {
+                pyramidMeta.push({ row, col });
+                if (row === 6) {
+                    pyramidChildren.push([]);
+                } else {
+                    pyramidChildren.push([
+                        getPyramidIndex(row + 1, col),
+                        getPyramidIndex(row + 1, col + 1)
+                    ]);
+                }
+            }
+        }
+
+        function createDeck() {
+            const deck = [];
+            for (const suit of suits) {
+                for (let rank = 1; rank <= 13; rank += 1) {
+                    deck.push({ id: `${rank}-${suit}-${Math.random().toString(36).slice(2, 8)}`, rank, suit, removed: false });
+                }
+            }
+            return deck;
+        }
+
+        function shuffle(deck) {
+            for (let index = deck.length - 1; index > 0; index -= 1) {
+                const swapIndex = Math.floor(Math.random() * (index + 1));
+                [deck[index], deck[swapIndex]] = [deck[swapIndex], deck[index]];
+            }
+            return deck;
+        }
+
+        function buildDealFromDeck(deck) {
+            const pyramid = [];
+            let cardIndex = 0;
+
+            pyramidRowSizes.forEach((size, row) => {
+                for (let col = 0; col < size; col += 1) {
+                    pyramid.push({
+                        ...deck[cardIndex],
+                        row,
+                        col,
+                        removed: false
+                    });
+                    cardIndex += 1;
+                }
+            });
+
+            return {
+                pyramid,
+                stock: deck.slice(cardIndex)
+            };
+        }
+
+        function countOpeningOptions(pyramidRanks) {
+            const exposed = [];
+            for (let index = 0; index < pyramidRanks.length; index += 1) {
+                if (pyramidMeta[index].row === 6) exposed.push(index);
+            }
+
+            let options = 0;
+            for (const index of exposed) {
+                if (pyramidRanks[index] === 13) options += 1;
+            }
+
+            for (let i = 0; i < exposed.length; i += 1) {
+                for (let j = i + 1; j < exposed.length; j += 1) {
+                    if (pyramidRanks[exposed[i]] + pyramidRanks[exposed[j]] === 13) {
+                        options += 1;
+                    }
+                }
+            }
+
+            return options;
+        }
+
+        function analyzeDeal(pyramidCards, stockCards) {
+            const pyramidRanks = pyramidCards.map(card => card.rank);
+            const stockRanks = stockCards.map(card => card.rank);
+            const memo = new Set();
+            const nodeLimit = 45000;
+            let explored = 0;
+            let aborted = false;
+
+            function isExposedByMask(index, mask) {
+                const children = pyramidChildren[index];
+                return !children.length || (Boolean(mask & (1 << children[0])) && Boolean(mask & (1 << children[1])));
+            }
+
+            function findSolution(mask, stock, waste, redeals, moves, draws) {
+                if (aborted) return null;
+                explored += 1;
+                if (explored > nodeLimit) {
+                    aborted = true;
+                    return null;
+                }
+                if (mask === fullPyramidMask) {
+                    return { moves, draws };
+                }
+
+                const key = `${mask}|${stock.join(",")}|${waste.join(",")}|${redeals}`;
+                if (memo.has(key)) return null;
+
+                const exposed = [];
+                for (let index = 0; index < pyramidRanks.length; index += 1) {
+                    if (!(mask & (1 << index)) && isExposedByMask(index, mask)) {
+                        exposed.push(index);
+                    }
+                }
+
+                for (const index of exposed) {
+                    if (pyramidRanks[index] === 13) {
+                        const result = findSolution(mask | (1 << index), stock, waste, redeals, moves + 1, draws);
+                        if (result) return result;
+                    }
+                }
+
+                if (waste.length && waste[waste.length - 1] === 13) {
+                    const result = findSolution(mask, stock, waste.slice(0, -1), redeals, moves + 1, draws);
+                    if (result) return result;
+                }
+
+                for (let i = 0; i < exposed.length; i += 1) {
+                    for (let j = i + 1; j < exposed.length; j += 1) {
+                        if (pyramidRanks[exposed[i]] + pyramidRanks[exposed[j]] === 13) {
+                            const result = findSolution(mask | (1 << exposed[i]) | (1 << exposed[j]), stock, waste, redeals, moves + 1, draws);
+                            if (result) return result;
+                        }
+                    }
+                }
+
+                if (waste.length) {
+                    const topWaste = waste[waste.length - 1];
+                    for (const index of exposed) {
+                        if (pyramidRanks[index] + topWaste === 13) {
+                            const result = findSolution(mask | (1 << index), stock, waste.slice(0, -1), redeals, moves + 1, draws);
+                            if (result) return result;
+                        }
+                    }
+                }
+
+                if (stock.length) {
+                    const nextStock = stock.slice(0, -1);
+                    const nextWaste = [...waste, stock[stock.length - 1]];
+                    const result = findSolution(mask, nextStock, nextWaste, redeals, moves + 1, draws + 1);
+                    if (result) return result;
+                }
+
+                if (!stock.length && waste.length && redeals > 0) {
+                    const result = findSolution(mask, [...waste].reverse(), [], redeals - 1, moves + 1, draws);
+                    if (result) return result;
+                }
+
+                memo.add(key);
+                return null;
+            }
+
+            const solution = findSolution(0, stockRanks, [], 1, 0, 0);
+            return {
+                solvable: Boolean(solution),
+                timedOut: aborted,
+                moves: solution ? solution.moves : Infinity,
+                draws: solution ? solution.draws : Infinity,
+                openingOptions: countOpeningOptions(pyramidRanks)
+            };
+        }
+
+        function takeCardByRank(cardsByRank, rank) {
+            const bucket = cardsByRank.get(rank) || [];
+            if (!bucket.length) {
+                throw new Error(`Missing rank ${rank} while building a fallback deal.`);
+            }
+            return bucket.pop();
+        }
+
+        function createStructuredFallbackDeal() {
+            const deck = shuffle(createDeck());
+            const cardsByRank = new Map();
+
+            for (let rank = 1; rank <= 13; rank += 1) {
+                cardsByRank.set(rank, []);
+            }
+
+            deck.forEach(card => {
+                cardsByRank.get(card.rank).push(card);
+            });
+
+            cardsByRank.forEach(bucket => {
+                shuffle(bucket);
+            });
+
+            const pairPool = [];
+            pairRanks.forEach(pair => {
+                for (let count = 0; count < 4; count += 1) {
+                    pairPool.push(pair);
+                }
+            });
+            shuffle(pairPool);
+
+            const pyramid = [];
+            let pairIndex = 0;
+
+            pyramidRowSizes.forEach((size, row) => {
+                const rowCards = [];
+
+                if (size % 2 === 1) {
+                    rowCards.push(takeCardByRank(cardsByRank, 13));
+                }
+
+                for (let count = 0; count < Math.floor(size / 2); count += 1) {
+                    const [firstRank, secondRank] = pairPool[pairIndex];
+                    pairIndex += 1;
+                    rowCards.push(takeCardByRank(cardsByRank, firstRank));
+                    rowCards.push(takeCardByRank(cardsByRank, secondRank));
+                }
+
+                shuffle(rowCards);
+                rowCards.forEach((card, col) => {
+                    pyramid.push({
+                        ...card,
+                        row,
+                        col,
+                        removed: false
+                    });
+                });
+            });
+
+            return {
+                pyramid,
+                stock: shuffle(Array.from(cardsByRank.values()).flat())
+            };
+        }
+
+        function createWinnableDeal() {
+            let fallback = null;
+
+            for (let attempt = 0; attempt < 80; attempt += 1) {
+                const deck = shuffle(createDeck());
+                const deal = buildDealFromDeck(deck);
+                const analysis = analyzeDeal(deal.pyramid, deal.stock);
+                if (analysis.timedOut || !analysis.solvable) continue;
+
+                if (!fallback) fallback = deal;
+
+                const challengingEnough =
+                    analysis.draws >= 2 &&
+                    analysis.moves >= 18 &&
+                    analysis.openingOptions <= 4;
+
+                if (challengingEnough) return deal;
+            }
+
+            if (fallback) return fallback;
+            return createStructuredFallbackDeal();
+        }
+
+        function startNewGame() {
+            const deal = createWinnableDeal();
+            state.pyramid = deal.pyramid;
+            state.stock = deal.stock;
+            state.waste = [];
+            state.selected = [];
+            state.moves = 0;
+            state.won = false;
+            state.lost = false;
+            state.redealsLeft = 1;
+            state.scoreSaved = false;
+            saveScoreButton.disabled = true;
+            playerNameEl.value = "";
+            winBannerEl.className = "win-banner";
+            winBannerEl.textContent = "";
+            loseBannerEl.className = "lose-banner";
+            loseBannerEl.textContent = "";
+            renderAll();
+        }
+
+        function getRankLabel(rank) {
+            return rankLabels[rank] || String(rank);
+        }
+
+        function isRedSuit(suit) {
+            return suit === "hearts" || suit === "diamonds";
+        }
+
+        function getCardValue(card) {
+            return card.rank;
+        }
+
+        function isExposed(card) {
+            if (card.removed) return false;
+            if (card.row === 6) return true;
+            const belowLeft = state.pyramid.find(item => item.row === card.row + 1 && item.col === card.col);
+            const belowRight = state.pyramid.find(item => item.row === card.row + 1 && item.col === card.col + 1);
+            return Boolean((!belowLeft || belowLeft.removed) && (!belowRight || belowRight.removed));
+        }
+
+        function canPair(first, second) {
+            return getCardValue(first) + getCardValue(second) === 13;
+        }
+
+        function markMove() {
+            state.moves += 1;
+        }
+
+        function clearSelection() {
+            state.selected = [];
+        }
+
+        function removeCard(card) {
+            if (card.source === "waste") {
+                state.waste.pop();
+            } else {
+                const target = state.pyramid.find(item => item.id === card.id);
+                if (target) target.removed = true;
+            }
+        }
+
+        function handleKing(card) {
+            removeCard(card);
+            markMove();
+            clearSelection();
+            renderAll();
+            checkWin();
+            checkLoss();
+        }
+
+        function selectCard(card) {
+            if (state.won || state.lost) return;
+
+            if (card.source !== "waste" && !isExposed(card)) return;
+
+            if (getCardValue(card) === 13) {
+                handleKing(card);
+                return;
+            }
+
+            if (!state.selected.length) {
+                state.selected = [card];
+                renderAll();
+                return;
+            }
+
+            if (state.selected.some(item => item.id === card.id && item.source === card.source)) {
+                state.selected = state.selected.filter(item => !(item.id === card.id && item.source === card.source));
+                renderAll();
+                return;
+            }
+
+            if (state.selected.length === 1 && canPair(state.selected[0], card)) {
+                state.selected = [state.selected[0], card];
+                removeCard(state.selected[0]);
+                removeCard(card);
+                markMove();
+                clearSelection();
+                renderAll();
+                checkWin();
+                checkLoss();
+                return;
+            }
+
+            state.selected = [card];
+            renderAll();
+        }
+
+        function drawFromStock() {
+            if (state.won || state.lost) return;
+
+            if (state.stock.length) {
+                const next = state.stock.pop();
+                state.waste.push(next);
+                clearSelection();
+                markMove();
+                renderAll();
+                checkLoss();
+                return;
+            }
+
+            if (state.waste.length && state.redealsLeft > 0) {
+                state.stock = [...state.waste].reverse();
+                state.waste = [];
+                state.redealsLeft -= 1;
+                clearSelection();
+                markMove();
+                renderAll();
+                checkLoss();
+            }
+        }
+
+        function renderPyramid() {
+            pyramidEl.innerHTML = "";
+            const horizontalGap = 92;
+            const verticalGap = 78;
+
+            state.pyramid.forEach(card => {
+                const cardEl = buildCardElement(card, "pyramid");
+                cardEl.style.top = `${card.row * verticalGap}px`;
+                const offset = (6 - card.row) * (horizontalGap / 2);
+                cardEl.style.left = `${offset + (card.col * horizontalGap)}px`;
+                pyramidEl.appendChild(cardEl);
+            });
+        }
+
+        function buildCardElement(card, source) {
+            const el = document.createElement("button");
+            const exposed = source === "waste" ? true : isExposed(card);
+            const selected = state.selected.some(item => item.id === card.id && item.source === source);
+
+            el.type = "button";
+            el.className = [
+                "card",
+                isRedSuit(card.suit) ? "red" : "",
+                exposed ? "" : "blocked",
+                card.removed ? "cleared" : "",
+                selected ? "selected" : ""
+            ].filter(Boolean).join(" ");
+
+            el.innerHTML = `
+                <div>
+                    <div class="card-value">${getRankLabel(card.rank)}</div>
+                    <div class="card-suit">${suitMarks[card.suit]}</div>
+                </div>
+                <div class="card-center">${suitMarks[card.suit]}</div>
+                <div style="align-self:end; text-align:right;">
+                    <div class="card-value">${getRankLabel(card.rank)}</div>
+                    <div class="card-suit">${suitMarks[card.suit]}</div>
+                </div>
+            `;
+
+            el.addEventListener("click", () => selectCard({ ...card, source }));
+            return el;
+        }
+
+        function renderWaste() {
+            wastePileEl.innerHTML = "";
+            selectionSlotAEl.innerHTML = "";
+            selectionSlotBEl.innerHTML = "";
+
+            const topWaste = state.waste[state.waste.length - 1];
+            if (topWaste) {
+                wastePileEl.appendChild(buildCardElement(topWaste, "waste"));
+                wasteValueEl.textContent = `${getRankLabel(topWaste.rank)}${suitMarks[topWaste.suit]}`;
+            } else {
+                wasteValueEl.textContent = "--";
+            }
+
+            state.selected.forEach((selectedCard, index) => {
+                const slot = index === 0 ? selectionSlotAEl : selectionSlotBEl;
+                if (!slot) return;
+                const badge = document.createElement("div");
+                badge.className = `card ${isRedSuit(selectedCard.suit) ? "red" : ""}`;
+                badge.style.position = "static";
+                badge.style.width = "100%";
+                badge.style.height = "100%";
+                badge.style.cursor = "default";
+                badge.innerHTML = `
+                    <div>
+                        <div class="card-value">${getRankLabel(selectedCard.rank)}</div>
+                        <div class="card-suit">${suitMarks[selectedCard.suit]}</div>
+                    </div>
+                    <div class="card-center">${suitMarks[selectedCard.suit]}</div>
+                    <div style="align-self:end; text-align:right;">
+                        <div class="card-value">${getRankLabel(selectedCard.rank)}</div>
+                        <div class="card-suit">${suitMarks[selectedCard.suit]}</div>
+                    </div>
+                `;
+                slot.appendChild(badge);
+            });
+        }
+
+        function renderCounters() {
+            moveCountEl.textContent = String(state.moves);
+            cardsLeftEl.textContent = String(state.pyramid.filter(card => !card.removed).length);
+            stockCountEl.textContent = String(state.stock.length);
+            redealCountEl.textContent = String(state.redealsLeft);
+            stockButton.disabled = (!state.stock.length && (!state.waste.length || state.redealsLeft <= 0)) || state.won || state.lost;
+            stockButton.textContent = state.stock.length ? "DRAW" : (state.redealsLeft > 0 && state.waste.length ? "REDEAL" : "EMPTY");
+            saveScoreButton.disabled = !(state.won && !state.scoreSaved && playerNameEl.value.trim());
+        }
+
+        function loadLeaderboard() {
+            try {
+                const parsed = JSON.parse(localStorage.getItem(leaderboardKey) || "[]");
+                return Array.isArray(parsed) ? parsed : [];
+            } catch (error) {
+                return [];
+            }
+        }
+
+        function saveLeaderboard(entries) {
+            localStorage.setItem(leaderboardKey, JSON.stringify(entries));
+        }
+
+        function renderLeaderboard() {
+            const entries = loadLeaderboard();
+            leaderboardListEl.innerHTML = entries.length
+                ? entries.map((entry, index) => `
+                    <div class="leader-row">
+                        <span>${index + 1}. ${entry.name}</span>
+                        <strong>${entry.moves} moves</strong>
+                    </div>
+                `).join("")
+                : '<div class="leader-row"><span>No wins saved yet.</span><strong>Play one</strong></div>';
+        }
+
+        function checkWin() {
+            if (state.pyramid.every(card => card.removed)) {
+                state.won = true;
+                winBannerEl.className = "win-banner show";
+                winBannerEl.textContent = `Pyramid cleared in ${state.moves} moves. Add your name to save the run.`;
+                loseBannerEl.className = "lose-banner";
+                loseBannerEl.textContent = "";
+                renderCounters();
+            }
+        }
+
+        function hasPlayableMove() {
+            const exposedCards = state.pyramid.filter(card => !card.removed && isExposed(card));
+            const topWaste = state.waste[state.waste.length - 1] || null;
+
+            if (exposedCards.some(card => getCardValue(card) === 13)) return true;
+            if (topWaste && getCardValue(topWaste) === 13) return true;
+
+            for (let i = 0; i < exposedCards.length; i += 1) {
+                for (let j = i + 1; j < exposedCards.length; j += 1) {
+                    if (canPair(exposedCards[i], exposedCards[j])) return true;
+                }
+            }
+
+            if (topWaste) {
+                for (const card of exposedCards) {
+                    if (canPair(card, topWaste)) return true;
+                }
+            }
+
+            return false;
+        }
+
+        function checkLoss() {
+            if (state.won) return;
+            if (hasPlayableMove()) return;
+            if (state.stock.length > 0) return;
+            if (state.waste.length > 0 && state.redealsLeft > 0) return;
+
+            state.lost = true;
+            loseBannerEl.className = "lose-banner show";
+            loseBannerEl.textContent = "No more legal moves. Start a new game for a fresh shuffle.";
+            saveScoreButton.disabled = true;
+            renderCounters();
+        }
+
+        function saveScore() {
+            const name = playerNameEl.value.trim();
+            if (!name || !state.won || state.scoreSaved) return;
+
+            const entries = loadLeaderboard();
+            entries.push({ name, moves: state.moves });
+            entries.sort((a, b) => a.moves - b.moves);
+            saveLeaderboard(entries.slice(0, 10));
+            state.scoreSaved = true;
+            saveScoreButton.disabled = true;
+            winBannerEl.textContent = `Saved ${name} with ${state.moves} moves.`;
+            renderLeaderboard();
+        }
+
+        function renderAll() {
+            renderPyramid();
+            renderWaste();
+            renderCounters();
+        }
+
+        stockButton.addEventListener("click", drawFromStock);
+        newGameButton.addEventListener("click", startNewGame);
+        saveScoreButton.addEventListener("click", saveScore);
+        playerNameEl.addEventListener("input", () => {
+            saveScoreButton.disabled = !(state.won && !state.scoreSaved && playerNameEl.value.trim());
+        });
+        helpButton.addEventListener("click", () => {
+            helpModal.classList.toggle("open");
+        });
+
+        renderLeaderboard();
+        startNewGame();
+    </script>
+</body>
+</html>
